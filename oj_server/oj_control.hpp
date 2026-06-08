@@ -169,7 +169,7 @@ namespace ns_control
                     break;
                 }
             }
-            _mutex.unlock();         
+            _mutex.unlock();
         }
 
         void OnlineMachine()
@@ -180,6 +180,7 @@ namespace ns_control
             _mutex.unlock();
             LOG(INFO) << "所有的主机有上线啦!" << "\n";
         }
+
     private:
         // 所有主机
         std::vector<Machine> _machines;
@@ -269,22 +270,28 @@ namespace ns_control
                     // 说明此时没有任何一台服务器在线
                     break;
                 }
-                Client client(machine->_ip, machine->_port);           
-                machine->IncLoad();      
+                Client client(machine->_ip, machine->_port);
+
+                client.set_read_timeout(15);
+                client.set_write_timeout(15);
+                
+                machine->IncLoad();
+                LOG(LogLevel::INFO) << "选择服务器成功, id -> " << id << ", 具体信息 -> " << machine->_ip << " : " << machine->_port << ", 此时load -> " << machine->GetLoad() << std::endl;
                 auto res = client.Post("/compile_and_run", compile_str, "application/json;charset=utf-8");
                 if (res)
                 {
-                    if(res->status == 200)
+                    if (res->status == 200)
                     {
-                        LOG(LogLevel::INFO) << "选择服务器成功, id -> " << id << ", 具体信息 -> " << machine->_ip << " : " << machine->_port << ", 此时load -> " << machine->GetLoad() << std::endl;
                         out_json = res->body;
                         machine->DecLoad();
                         break;
                     }
                     machine->DecLoad();
                 }
-                else 
+                else
                 {
+                    std::cerr << "HTTP 请求失败, 错误码: " << static_cast<int>(res.error())
+                              << std::endl;
                     LOG(ERROR) << " 当前请求的主机id: " << id << " 详情: " << machine->_ip << ":" << machine->_port << " 可能已经离线" << ", 此时load -> " << machine->GetLoad() << std::endl;
                     machine->DecLoad();
                     _loadblance.OfflineMachine(id);
