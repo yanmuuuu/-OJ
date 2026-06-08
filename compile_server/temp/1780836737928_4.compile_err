@@ -1,0 +1,4 @@
+./temp/1780836737928_4.cc: In member function ‘std::vector<int> Solution::twoSum(std::vector<int>&, int)’:
+./temp/1780836737928_4.cc:9:5: warning: no return statement in function returning non-void [-Wreturn-type]
+    9 |     }
+      |     ^

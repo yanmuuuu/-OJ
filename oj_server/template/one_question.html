@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>{{TITLE}}</title>
+    <style>
+        body { background: #1a1a2e; color: #eee; font-family: sans-serif; margin: 0; }
+        .wrap { display: flex; height: 100vh; }
+        .left { width: 45%; padding: 20px; overflow: auto; border-right: 1px solid #333; }
+        .right { width: 55%; display: flex; flex-direction: column; }
+        #editor { flex: 1; min-height: 400px; }
+        .btn { background: #6c63ff; color: white; border: none; padding: 10px 20px; cursor: pointer; }
+        .result { background: #111; padding: 10px; max-height: 200px; overflow: auto; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="left">
+            <h3>{{NUMBER}}. {{TITLE}}</h3>
+            <p>难度: {{STAR}} | 时间: {{CPU_LIMIT}}s | 内存: {{MEM_LIMIT}}MB</p>
+            <hr>
+            <div>{{DESC}}</div>
+        </div>
+        <div class="right">
+            <div id="editor"></div>
+            <button class="btn" id="submitBtn">提交代码</button>
+            <div class="result" id="resultBox" style="display:none;">
+                <pre id="resultContent"></pre>
+            </div>
+        </div>
+    </div>
+
+    <textarea id="codeTemplate" style="display:none;">{{CODE:none}}</textarea>
+    <div id="questionNumber" style="display:none;">{{NUMBER}}</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/ace-builds@1.32.0/src-min-noconflict/ace.js"></script>
+    <script>
+        var editor = ace.edit("editor");
+        editor.setTheme("ace/theme/monokai");
+        editor.session.setMode("ace/mode/c_cpp");
+        editor.setValue(document.getElementById('codeTemplate').value, -1);
+
+        document.getElementById('submitBtn').addEventListener('click', function() {
+            var code = editor.getValue();
+            var num = document.getElementById('questionNumber').textContent;
+            fetch('/judge/' + num, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ input: '', code: code })
+            })
+            .then(r => r.json())
+            .then(d => {
+                document.getElementById('resultContent').textContent = JSON.stringify(d, null, 2);
+                document.getElementById('resultBox').style.display = '';
+            })
+            .catch(e => {
+                document.getElementById('resultContent').textContent = '错误: ' + e.message;
+                document.getElementById('resultBox').style.display = '';
+            });
+        });
+    </script>
+</body>
+</html>
