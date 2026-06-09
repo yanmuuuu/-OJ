@@ -10,15 +10,24 @@
 #include <sys/types.h>
 
 #include "boost/algorithm/string.hpp"
+#include "../oj_server/include/mysql.h"
 
 namespace ns_util
 {
-    static const std::string temp = "./temp/"; 
+    static const std::string temp = "./temp/";
+    static const std::string oj_questions = "oj_questions";
+    static const std::string oj_users = "oj_users";
+    static const std::string oj_sessions = "oj_sessions";
+    static const std::string host = "127.0.0.1";
+    static const std::string user = "oj_backend";
+    static const std::string passwd = "123456";
+    static const std::string db = "oj";
+    static const int port = 3306;
 
     class TimeUtil
     {
     public:
-        //秒级别时间戳
+        // 秒级别时间戳
         static const std::string GetTimeStamp_S()
         {
             struct timeval tv;
@@ -26,19 +35,19 @@ namespace ns_util
             return std::to_string(tv.tv_sec);
         }
 
-        //毫秒级别时间戳
+        // 毫秒级别时间戳
         static const std::string GetTimeStamp_MS()
         {
             struct timeval tv;
             gettimeofday(&tv, nullptr);
             return std::to_string((tv.tv_sec * 1000 + tv.tv_usec / 1000));
-        }       
+        }
     };
 
     class PathUtil
     {
     public:
-        static std::string AddSuffix(const std::string& file_name, const std::string& suffix)
+        static std::string AddSuffix(const std::string &file_name, const std::string &suffix)
         {
             std::string file = temp;
             file += file_name;
@@ -46,32 +55,32 @@ namespace ns_util
             return file;
         }
 
-        static std::string Src(const std::string& file_name)
+        static std::string Src(const std::string &file_name)
         {
             return AddSuffix(file_name, ".cc");
         }
 
-        static std::string Exe(const std::string& file_name)
+        static std::string Exe(const std::string &file_name)
         {
             return AddSuffix(file_name, ".exe");
         }
 
-        static std::string Compile_err(const std::string& file_name)
+        static std::string Compile_err(const std::string &file_name)
         {
             return AddSuffix(file_name, ".compile_err");
         }
 
-        static std::string Stdin(const std::string& file_name)
+        static std::string Stdin(const std::string &file_name)
         {
             return AddSuffix(file_name, ".stdin");
         }
 
-        static std::string Stdout(const std::string& file_name)
+        static std::string Stdout(const std::string &file_name)
         {
             return AddSuffix(file_name, ".stdout");
         }
 
-        static std::string Stderr(const std::string& file_name)
+        static std::string Stderr(const std::string &file_name)
         {
             return AddSuffix(file_name, ".stderr");
         }
@@ -90,13 +99,13 @@ namespace ns_util
 
         static std::string CreateUniqueFile()
         {
-            //利用 毫秒级时间戳 + 原子递增量 组成唯一文件名
+            // 利用 毫秒级时间戳 + 原子递增量 组成唯一文件名
             static std::atomic_int atomic(0);
             atomic++;
             return TimeUtil::GetTimeStamp_MS() + "_" + to_string(atomic);
         }
 
-        static bool WriteFile(const std::string& target_file, const std::string& content)
+        static bool WriteFile(const std::string &target_file, const std::string &content)
         {
             std::ofstream out(target_file);
             if (!out.is_open())
@@ -108,7 +117,7 @@ namespace ns_util
             return true;
         }
 
-        static bool ReadFile(const std::string& target_file, std::string& content, bool keep = false)
+        static bool ReadFile(const std::string &target_file, std::string &content, bool keep = false)
         {
             content.clear();
             std::ifstream in(target_file);
@@ -130,9 +139,117 @@ namespace ns_util
     class StringUtil
     {
     public:
-        static void SplitString(const std::string& str, std::vector<std::string>& target, const std::string& sep)
+        static void SplitString(const std::string &str, std::vector<std::string> &target, const std::string &sep)
         {
             boost::split(target, str, boost::is_any_of(sep), boost::algorithm::token_compress_on);
+        }
+    };
+
+    class MysqlUtil
+    {
+    public:
+        // 执行 INSERT / UPDATE / DELETE，成功返回 true
+        static bool Execute(const std::string &sql)
+        {
+            MYSQL *mysql = Connect();
+            if (mysql == nullptr)
+            {
+                return false;
+            }
+
+            if (mysql_query(mysql, sql.c_str()) != 0)
+            {
+                // LOG(LogLevel::WARNING) << "mysql_query failed, sql : " << sql << std::endl;
+                Close(mysql);
+                return false;
+            }
+            Close(mysql);
+            return true;
+        }
+
+        // 执行 SELECT，每行调用 handler；handler 返回 false 则提前结束
+        static bool Query(const std::string &sql, const std::function<bool(MYSQL_ROW)> &handler)
+        {
+            MYSQL *mysql = Connect();
+            if (mysql == nullptr)
+            {
+                return false;
+            }
+
+            if (mysql_query(mysql, sql.c_str()) != 0)
+            {
+                Close(mysql);
+                return false;
+            }
+
+            MYSQL_RES *result = mysql_store_result(mysql);
+            if (result == nullptr)
+            {
+                Close(mysql);
+                return false;
+            }
+
+            MYSQL_ROW row;
+            while ((row = mysql_fetch_row(result)) != nullptr)
+            {
+                if (!handler(row))
+                {
+                    break; // handler 返回 false，提前结束遍历
+                }
+            }
+
+            mysql_free_result(result);
+            Close(mysql);
+            return true;
+        }
+
+        // 对字符串做 SQL 转义（内部连库 → 转义 → 关库）
+        static std::string Escape(const std::string &s)
+        {
+            MYSQL *mysql = Connect();
+            if (!mysql)
+                return "";
+
+            std::vector<char> buf(s.size() * 2 + 1, '\0');
+            mysql_real_escape_string(mysql, buf.data(), s.c_str(), s.size());
+
+            std::string escaped(buf.data());
+            Close(mysql);
+            return escaped;
+        }
+
+    private:
+        // 连接数据库
+        static MYSQL *Connect()
+        {
+            // 初始化数据库
+            MYSQL *mysql = mysql_init(nullptr);
+            if (mysql == nullptr)
+            {
+                // 由于log.hpp里面包含了util.hpp, 这里不能直接调用LOG宏, 否则会导致死循环
+                // 后面重构log.hpp
+                // LOG(LogLevel::FATAL) << "mysql_init failed" << std::endl;
+                return nullptr;
+            }
+
+            // 设置编码格式
+            mysql_set_character_set(mysql, "utf8");
+
+            // 连接数据库
+            if (mysql_real_connect(mysql, host.c_str(), user.c_str(), passwd.c_str(), db.c_str(), port, nullptr, 0) == nullptr)
+            {
+                // LOG(LogLevel::FATAL) << "mysql_real_connet failed" << std::endl;
+                mysql_close(mysql);
+                return nullptr;
+            }
+            // LOG(LogLevel::INFO) << "connect mysql success" << std::endl;
+            return mysql;
+        }
+
+        static void Close(MYSQL *mysql)
+        {
+            if (mysql)
+                mysql_close(mysql);
         }
     };
 }

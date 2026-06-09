@@ -6,6 +6,7 @@
 #include <assert.h>
 
 #include "../comm/log.hpp"
+#include "../comm/util.hpp"
 #include "include/mysql.h"
 
 //根据questions.list将所有题目文件添加到内存中
@@ -15,13 +16,6 @@ namespace ns_model
 {
     using namespace ns_log;
     using namespace ns_util;
-
-    const std::string oj_questions = "oj_questions";
-    const std::string host = "127.0.0.1";
-    const std::string user = "oj_backend";
-    const std::string passwd = "123456";
-    const std::string db = "oj";
-    const int port = 3306;
 
     struct Question
     {
@@ -45,48 +39,9 @@ namespace ns_model
         ~Model()
         {}
 
-        bool QueryMysql(const std::string& sql, std::vector<Question>& out)
-        {
-            //初始化数据库
-            MYSQL* mysql = mysql_init(nullptr);
-            if (mysql == nullptr)
-            {
-                LOG(LogLevel::FATAL) << "mysql_init failed" << std::endl;
-                return false;
-            }
-
-            //设置编码格式
-            mysql_set_character_set(mysql, "utf8");
-
-            //连接数据库
-            if (mysql_real_connect(mysql, host.c_str(), user.c_str(), passwd.c_str(), db.c_str(), port, nullptr, 0) == nullptr)
-            {
-                LOG(LogLevel::FATAL) << "mysql_real_connet failed" << std::endl;
-                mysql_close(mysql);
-                return false;
-            }
-            LOG(LogLevel::INFO) << "connect mysql success" << std::endl;
-            
-
-            //执行MySql语句
-            if (mysql_query(mysql, sql.c_str()) != 0)
-            {
-                LOG(LogLevel::WARNING) << "mysql_query failed, sql : " << sql << std::endl;
-                mysql_close(mysql);
-                return false;
-            }
-
-            //分析结果
-            MYSQL_RES* result = mysql_store_result(mysql);
-            if (result == nullptr)      
-            {
-                LOG(LogLevel::WARNING) << "mysql_store_result failed, sql : " << sql << std::endl;
-                mysql_close(mysql);
-                return false;
-            }
-            MYSQL_ROW row;
-            while ((row = mysql_fetch_row(result)) != nullptr)
-            {
+        bool QueryMysqlSelect(const std::string& sql, std::vector<Question>& out)
+        {               
+            return MysqlUtil::Query(sql, [&out](MYSQL_ROW row) -> bool{
                 Question q;
                 q.number = row[0];
                 q.title = row[1];
@@ -97,13 +52,13 @@ namespace ns_model
                 q.cpu_limit = atoi(row[6]);
                 q.mem_limit = atoi(row[7]);
                 out.push_back(q);
-            }      
-            mysql_free_result(result);
+                return true;
+            });
+        }
 
-            //关闭连接
-            mysql_close(mysql);
-
-            return true;
+        bool QueryMysqlOther(const std::string& sql)
+        {
+            return MysqlUtil::Execute(sql);
         }
 
     
@@ -111,7 +66,7 @@ namespace ns_model
         {
             std::string sql;
             sql += "select * from " + oj_questions;
-            return QueryMysql(sql, out);
+            return QueryMysqlSelect(sql, out);
         }
 
         bool GetOneQuestion(const std::string& number, Question& q)
@@ -119,7 +74,7 @@ namespace ns_model
             std::string sql;
             sql += "select * from " + oj_questions + " where number=" + number;
             std::vector<Question> out;
-            if (QueryMysql(sql, out))
+            if (QueryMysqlSelect(sql, out))
             {
                 if (out.size() == 1)
                 {

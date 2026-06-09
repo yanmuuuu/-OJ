@@ -1,4 +1,5 @@
 #include <jsoncpp/json/json.h>
+#include <sstream>
 
 #include "compile.hpp"
 #include "runner.hpp"
@@ -51,6 +52,63 @@ namespace ns_compile_run
                 unlink(PathUtil::Stdout(file_name).c_str());
         }
 
+        static std::string SanitizeCompileError(const std::string &raw)
+        {
+            if (raw.empty())
+                return "代码存在语法错误，请检查括号、分号与类型声明";
+
+            std::ostringstream cleaned;
+            std::istringstream iss(raw);
+            std::string line;
+            while (std::getline(iss, line))
+            {
+                if (line.find("head.cpp") != std::string::npos && line.find("error:") == std::string::npos)
+                    continue;
+
+                size_t temp_pos = line.find("./temp/");
+                if (temp_pos != std::string::npos)
+                {
+                    size_t cc_pos = line.find(".cc:", temp_pos);
+                    if (cc_pos != std::string::npos)
+                    {
+                        std::string rest = line.substr(cc_pos + 4);
+                        if (!rest.empty() && rest[0] == ':')
+                        {
+                            size_t first = rest.find(':');
+                            size_t second = rest.find(':', first + 1);
+                            if (second != std::string::npos)
+                            {
+                                std::string line_num = rest.substr(first + 1, second - first - 1);
+                                std::string msg = rest.substr(second + 1);
+                                while (!msg.empty() && (msg[0] == ':' || msg[0] == ' '))
+                                    msg.erase(msg.begin());
+                                line = "第 " + line_num + " 行: " + msg;
+                            }
+                            else
+                                continue;
+                        }
+                        else if (rest.find("error:") != std::string::npos || rest.find("warning:") != std::string::npos)
+                            line = rest;
+                        else
+                            continue;
+                    }
+                }
+
+                if (line.find("/temp/") != std::string::npos && line.find("error:") == std::string::npos)
+                    continue;
+
+                if (!line.empty())
+                    cleaned << line << "\n";
+            }
+
+            std::string result = cleaned.str();
+            while (!result.empty() && (result.back() == '\n' || result.back() == '\r'))
+                result.pop_back();
+            if (result.empty())
+                return "代码存在语法错误，请检查括号、分号与类型声明";
+            return result;
+        }
+
         static std::string CodeToDesc(int status_code, const std::string &file_name)
         {
             std::string desc;
@@ -63,22 +121,38 @@ namespace ns_compile_run
                 desc = "代码为空";
                 break;
             case -2:
-                desc = "未知错误";
+                desc = "判题服务异常，请稍后重试";
                 break;
             case -3:
-                FileUtil::ReadFile(PathUtil::Compile_err(file_name), desc, true);
+            {
+                std::string raw;
+                FileUtil::ReadFile(PathUtil::Compile_err(file_name), raw, true);
+                desc = SanitizeCompileError(raw);
                 break;
+            }
             case SIGFPE: // 8
-                desc = "浮点数溢出";
+                desc = "运行时浮点异常，请检查除零或数值溢出";
                 break;
             case SIGXCPU: // 24
-                desc = "超出时间限制";
+                desc = "超出时间限制，请优化算法效率";
                 break;
             case SIGABRT: // 6
-                desc = "超出空间限制";
+                desc = "超出内存限制，请优化空间复杂度";
+                break;
+            case SIGSEGV: // 11
+                desc = "运行时错误，请检查数组越界或非法内存访问";
+                break;
+            case SIGTRAP: // 5
+                desc = "程序运行异常，请检查代码逻辑";
+                break;
+            case SIGKILL: // 9
+                desc = "程序运行超时或被强制终止";
                 break;
             default:
-                desc = "unknow err : " + std::to_string(status_code);
+                if (status_code > 0)
+                    desc = "程序运行异常，请检查代码逻辑";
+                else
+                    desc = "判题失败，请稍后重试";
                 break;
             }
             return desc;

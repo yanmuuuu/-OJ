@@ -15,9 +15,6 @@ int main(int argc, char* argv[])
     }
     Server svr;
 
-    svr.Get("/hello", [](const Request& req, Response& resp){
-        resp.set_content("hello cpp-httplib, 你好呀~~", "text/plain;charset=utf-8");
-    });
     svr.Post("/compile_and_run", [](const Request& req, Response& resp){
         std::string in_json = req.body;
         if (in_json.empty())

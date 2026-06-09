@@ -2,42 +2,52 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>题目列表</title>
-    <style>
-        body { background: #1a1a2e; color: #eee; font-family: sans-serif; padding: 20px; }
-        a { color: #a78bfa; text-decoration: none; }
-        .card { background: #16213e; padding: 15px; margin: 10px 0; border-radius: 8px; }
-        .search { margin-bottom: 20px; }
-        .search input { padding: 8px; width: 200px; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>题目列表 · OJ</title>
+    <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-    <h2>题目列表</h2>
-    <div class="search">
-        <input type="text" id="searchInput" placeholder="搜索题目...">
-    </div>
-    <div id="list">
-        {{#QUESTIONS}}
-        <div class="card question-card" data-title="{{TITLE}}" data-number="{{NUMBER}}">
-            <a href="/question/{{NUMBER}}">{{NUMBER}}. {{TITLE}}</a>
-            <span style="margin-left:10px;color:#aaa;">{{STAR}} | {{CPU_LIMIT}}s | {{MEM_LIMIT}}MB</span>
+    <nav class="navbar">
+        <a class="navbar-brand" href="/all_questions">Online Judge</a>
+        <span class="navbar-link">题目列表</span>
+    </nav>
+
+    <main class="page-list">
+        <header class="page-header">
+            <h1>算法题库</h1>
+            <p>选择一道题目，进入代码工作区开始解题</p>
+        </header>
+
+        <div class="search-wrap">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+            <input type="text" class="search-input" id="searchInput" placeholder="搜索题号或标题..." autocomplete="off">
         </div>
-        {{/QUESTIONS}}
-    </div>
-    <p id="emptyMsg" style="display:none;">没有匹配的题目</p>
-    <script>
-        document.getElementById('searchInput').addEventListener('input', function(e) {
-            var val = e.target.value.toLowerCase();
-            var cards = document.querySelectorAll('.question-card');
-            var visible = 0;
-            cards.forEach(function(c) {
-                var hit = (c.dataset.title || '').toLowerCase().includes(val) || 
-                          (c.dataset.number || '').includes(val);
-                c.style.display = hit ? '' : 'none';
-                if (hit) visible++;
-            });
-            document.getElementById('emptyMsg').style.display = visible ? 'none' : '';
-        });
-    </script>
+
+        <div class="stats-bar">
+            <span>共 <strong id="totalCount">0</strong> 道题目</span>
+        </div>
+
+        <div class="question-grid" id="questionGrid">
+            {{#QUESTIONS}}
+            <article class="question-card" data-title="{{TITLE}}" data-number="{{NUMBER}}">
+                <a href="/question/{{NUMBER}}">
+                    <div class="card-number">PROBLEM {{NUMBER}}</div>
+                    <h2 class="card-title">{{TITLE}}</h2>
+                    <div class="card-meta">
+                        <div class="card-limits">
+                            <span>{{CPU_LIMIT}}s</span>
+                            <span>{{MEM_LIMIT}}MB</span>
+                        </div>
+                        <span class="difficulty {{STAR}}">{{STAR}}</span>
+                        <span class="card-arrow">进入 →</span>
+                    </div>
+                </a>
+            </article>
+            {{/QUESTIONS}}
+            <div class="empty-state hidden" id="emptyState">没有匹配的题目</div>
+        </div>
+    </main>
+
+    <script src="/js/all_questions.js"></script>
 </body>
 </html>

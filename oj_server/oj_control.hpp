@@ -83,6 +83,7 @@ namespace ns_control
     };
 
     const std::string &conf_path = "./conf/service_machine.conf";
+
     // 负载均衡
     class LoadBlance
     {
@@ -204,6 +205,34 @@ namespace ns_control
         {
         }
 
+        static std::string BuildJudgeErrorJson(int status, const std::string &reason)
+        {
+            Json::Value root;
+            root["status"] = status;
+            root["reason"] = reason;
+            Json::StreamWriterBuilder builder;
+            builder["indentation"] = "";
+            builder["emitUTF8"] = true;
+            return Json::writeString(builder, root);
+        }
+
+        static void SanitizeJudgeResponse(std::string &out_json)
+        {
+            // 仅处理 oj_server 无法连通 compile_server 的情况，其余原样透传 compile_run 的 JSON
+            if (out_json.empty())
+            {
+                out_json = BuildJudgeErrorJson(-2, "判题服务暂时不可用，请稍后重试");
+                return;
+            }
+
+            Json::Value root;
+            Json::Reader reader;
+            if (!reader.parse(out_json, root) || !root.isObject() || !root.isMember("status"))
+            {
+                out_json = BuildJudgeErrorJson(-2, "判题服务暂时不可用，请稍后重试");
+            }
+        }
+
         // 获取全部题目网页
         bool AllQuestions(std::string &html)
         {
@@ -297,6 +326,7 @@ namespace ns_control
                     _loadblance.OfflineMachine(id);
                 }
             }
+            SanitizeJudgeResponse(out_json);
         }
 
         void RecoveryMachine()
