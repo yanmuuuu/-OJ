@@ -141,6 +141,25 @@ namespace ns_util
             in.close();
             return true;
         }
+
+        static std::string GetProjectPath(const std::string& file)
+        {
+            std::vector<std::string> paths =
+            {
+                file,
+                "../" + file,
+                "./oj_server/" + file
+            };
+
+            for(const auto& path : paths)
+            {
+                std::ifstream in(path);
+                if(in.good())
+                    return path;
+            }
+
+            return "";
+        }
     };
 
     class StringUtil

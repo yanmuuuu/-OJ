@@ -5,9 +5,9 @@
 #include <vector>
 #include <assert.h>
 
-#include "../comm/log.hpp"
-#include "../comm/util.hpp"
-#include "../third_party/include/mysql.h"
+#include "../../comm/log.hpp"
+#include "../../comm/util.hpp"
+#include "../../third_party/include/mysql.h"
 
 //根据questions.list将所有题目文件添加到内存中
 //该模块用来和数据交互,将数据交给外部

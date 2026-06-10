@@ -9,12 +9,12 @@
 
 #include <jsoncpp/json/json.h>
 
-#include "../comm/log.hpp"
-#include "../comm/util.hpp"
-#include "oj_model_sql_que.hpp"
-#include "oj_model_sql_usr.hpp"
-#include "oj_view.hpp"
-#include "../comm/httplib.h"
+#include "../../comm/log.hpp"
+#include "../../comm/util.hpp"
+#include "../model/oj_model_sql_que.hpp"
+#include "../model/oj_model_sql_usr.hpp"
+#include "../view/oj_view.hpp"
+#include "../../comm/httplib.h"
 
 namespace ns_control
 {
@@ -83,14 +83,13 @@ namespace ns_control
         }
     };
 
-    const std::string &conf_path = "./conf/service_machine.conf";
-
     // 负载均衡
     class LoadBlance
     {
     public:
         LoadBlance()
         {
+            std::string conf_path = FileUtil::GetProjectPath("./conf/service_machine.conf");
             assert(LoadConf(conf_path));
             LOG(LogLevel::FATAL) << "文件 : " << conf_path << " 内容获取成功";
         }

@@ -4,8 +4,8 @@
 #include <string>
 #include <vector>
 
-#include "../comm/log.hpp"
-#include "../comm/util.hpp"
+#include "../../comm/log.hpp"
+#include "../../comm/util.hpp"
 
 namespace ns_model
 {

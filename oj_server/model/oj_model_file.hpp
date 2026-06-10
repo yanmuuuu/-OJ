@@ -5,8 +5,8 @@
 #include <vector>
 #include <assert.h>
 
-#include "../comm/log.hpp"
-#include "../comm/util.hpp"
+#include "../../comm/log.hpp"
+#include "../../comm/util.hpp"
 
 //根据questions.list将所有题目文件添加到内存中
 //该模块用来和数据交互,将数据交给外部
@@ -16,8 +16,8 @@ namespace ns_model
     using namespace ns_log;
     using namespace ns_util;
 
-    static const std::string question_list = "./questions/questions.list";
-    static const std::string question_path = "./questions/";
+    static const std::string question_list = "../questions/questions.list";
+    static const std::string question_path = "../questions/";
 
     struct Question
     {

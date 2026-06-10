@@ -4,7 +4,7 @@
 
 #include <ctemplate/template.h>
 
-#include "oj_model_sql_que.hpp"
+#include "../model/oj_model_sql_que.hpp"
 
 namespace ns_view
 {
@@ -37,7 +37,12 @@ namespace ns_view
             }
 
             // 加载模板
-            ctemplate::Template *tpl = ctemplate::Template::GetTemplate("./template/all_questions.html", ctemplate::DO_NOT_STRIP);
+            ctemplate::Template *tpl = ctemplate::Template::GetTemplate(FileUtil::GetProjectPath("./template/all_questions.html"), ctemplate::DO_NOT_STRIP);
+            if (!tpl)
+            {
+                html = "模板文件加载失败: all_questions.html";
+                return;
+            }
 
             // 展开模板，将结果填充到html字符串中
             tpl->Expand(&html, &dict);
@@ -56,10 +61,10 @@ namespace ns_view
             // 重要：只提供 head.cpp 内容（函数签名/框架），让用户填写函数体
             dict.SetValue("CODE", question.head); // 而不是 head + tail
 
-            ctemplate::Template *tpl = ctemplate::Template::GetTemplate("./template/one_question.html", ctemplate::DO_NOT_STRIP);
+            ctemplate::Template *tpl = ctemplate::Template::GetTemplate(FileUtil::GetProjectPath("./template/one_question.html"), ctemplate::DO_NOT_STRIP);
             if (!tpl)
             {
-                html = "模板文件加载失败: ./template/one_question.html";
+                html = "模板文件加载失败: one_question.html";
                 return;
             }
             tpl->Expand(&html, &dict);
@@ -68,10 +73,10 @@ namespace ns_view
         void LoginExpandHtml(std::string &html)
         {
             ctemplate::TemplateDictionary dict("login");
-            ctemplate::Template *tpl = ctemplate::Template::GetTemplate("./template/login.html", ctemplate::DO_NOT_STRIP);
+            ctemplate::Template *tpl = ctemplate::Template::GetTemplate(FileUtil::GetProjectPath("./template/login.html"), ctemplate::DO_NOT_STRIP);
             if (!tpl)
             {
-                html = "模板文件加载失败: ./template/login.html";
+                html = "模板文件加载失败: login.html";
                 return;
             }
             tpl->Expand(&html, &dict);
@@ -80,10 +85,10 @@ namespace ns_view
         void RegisterExpandHtml(std::string &html)
         {
             ctemplate::TemplateDictionary dict("register");
-            ctemplate::Template *tpl = ctemplate::Template::GetTemplate("./template/register.html", ctemplate::DO_NOT_STRIP);
+            ctemplate::Template *tpl = ctemplate::Template::GetTemplate(FileUtil::GetProjectPath("./template/register.html"), ctemplate::DO_NOT_STRIP);
             if (!tpl)
             {
-                html = "模板文件加载失败: ./template/register.html";
+                html = "模板文件加载失败: register.html";
                 return;
             }
             tpl->Expand(&html, &dict);

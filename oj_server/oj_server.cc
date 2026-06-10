@@ -1,7 +1,7 @@
 #include <iostream>
 
 #include "../comm/httplib.h"
-#include "oj_control.hpp"
+#include "control/oj_control.hpp"
 
 using namespace httplib;
 using namespace ns_control;
