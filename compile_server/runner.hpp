@@ -7,8 +7,8 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
-#include "../comm/log.hpp"
 #include "../comm/util.hpp"
+#include "../comm/log.hpp"
 
 //运行模块
 // 
@@ -72,7 +72,7 @@ namespace ns_runner
             int _err_fd = open(_std_err.c_str(), O_CREAT | O_WRONLY, 0644);
             if (_in_fd < 0 || _out_fd < 0 || _err_fd < 0)
             {
-                LOG(LogLevel::ERROR) << "运行模块: open失败" << std::endl;
+                LOG(LogLevel::ERROR) << "运行模块: open失败";
                 return -1; //open失败 
             }
 
@@ -82,7 +82,7 @@ namespace ns_runner
                 close(_in_fd);
                 close(_out_fd);
                 close(_err_fd);
-                LOG(LogLevel::ERROR) << "运行模块: fork失败" << std::endl;
+                LOG(LogLevel::ERROR) << "运行模块: fork失败";
                 return -2; //创建子进程失败
             }
             else if (pid == 0)
@@ -94,7 +94,7 @@ namespace ns_runner
                 SetProcLimit(cpu_limit, mem_limit);
 
                 execlp(PathUtil::Exe(file_name).c_str(), PathUtil::Exe(file_name).c_str(), nullptr);
-                LOG(LogLevel::ERROR) << "运行模块: execlp异常" << std::endl;
+                LOG(LogLevel::ERROR) << "运行模块: execlp异常";
                 exit(1);
             }
             else
@@ -104,7 +104,7 @@ namespace ns_runner
                 close(_err_fd);
                 int status = 0;
                 waitpid(pid, &status, 0);
-                LOG(LogLevel::INFO) << "运行模块完成, 返回信号 : " << (status & 0x7F) << std::endl;
+                LOG(LogLevel::INFO) << "运行模块完成, 返回信号 : " << (status & 0x7F);
                 return status & 0x7F;
             }
         }

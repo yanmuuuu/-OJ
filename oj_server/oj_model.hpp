@@ -6,6 +6,7 @@
 #include <assert.h>
 
 #include "../comm/log.hpp"
+#include "../comm/util.hpp"
 
 //根据questions.list将所有题目文件添加到内存中
 //该模块用来和数据交互,将数据交给外部
@@ -36,7 +37,7 @@ namespace ns_model
         ModelQuestions()
         {
             assert(LoadQuestionList(question_list));
-            LOG(LogLevel::INFO) << "题库加载成功" << std::endl;
+            LOG(LogLevel::INFO) << "题库加载成功";
         }
 
         ~ModelQuestions()
@@ -48,7 +49,7 @@ namespace ns_model
             std::ifstream in(question_list);
             if (!in.is_open())
             {
-                LOG(LogLevel::FATAL) << "题库加载失败, 请检查是否有此文件" << std::endl;
+                LOG(LogLevel::FATAL) << "题库加载失败, 请检查是否有此文件";
                 return false;
             }
             std::string line;
@@ -58,7 +59,7 @@ namespace ns_model
                 StringUtil::SplitString(line, target, " ");
                 if (target.size() != 5)
                 {
-                    LOG(LogLevel::WARNING) << "该行有问题 : " << line << std::endl;
+                    LOG(LogLevel::WARNING) << "该行有问题 : " << line;
                     continue;
                 }
                 Question q;
@@ -80,7 +81,7 @@ namespace ns_model
         {
             if (_questions.empty())
             {
-                LOG(LogLevel::ERROR) << "用户获取题库失败" << std::endl;
+                LOG(LogLevel::ERROR) << "用户获取题库失败";
                 return false;
             }
             for (auto& q : _questions)
@@ -95,7 +96,7 @@ namespace ns_model
             auto iter = _questions.find(number);
             if (iter == _questions.end())
             {
-                LOG(LogLevel::ERROR) << "用户获取题目失败 : " << number << std::endl;
+                LOG(LogLevel::ERROR) << "用户获取题目失败 : " << number;
                 return false;
             }
             q = iter->second;

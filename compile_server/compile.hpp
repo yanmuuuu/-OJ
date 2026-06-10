@@ -42,7 +42,7 @@ namespace ns_compiler
             pid_t pid = fork();
             if (pid < 0)
             {
-                LOG(LogLevel::ERROR) << "子进程创建失败, 程序退出" << std::endl;
+                LOG(LogLevel::ERROR) << "子进程创建失败, 程序退出";
                 return false;
             }
             else if (pid == 0)
@@ -52,7 +52,7 @@ namespace ns_compiler
                 int _stderr = open(PathUtil::Compile_err(file_name).c_str(), O_CREAT | O_WRONLY, 0644);
                 if (_stderr < 0)
                 {
-                    LOG(LogLevel::ERROR) << "stderr文件创建失败" << std::endl;
+                    LOG(LogLevel::ERROR) << "stderr文件创建失败";
                     exit(1);
                 }
 
@@ -64,7 +64,7 @@ namespace ns_compiler
                         PathUtil::Exe(file_name).c_str(), "-std=c++17", "-D", "COMPILER_ONLINE", nullptr);
                 
                 //exit(2) 是为了在 execlp 失败时主动终止子进程
-                LOG(LogLevel::ERROR) << "g++编译器异常, 可能是参数传递有误" << std::endl;
+                LOG(LogLevel::ERROR) << "g++编译器异常, 可能是参数传递有误";
                 exit(2);
             }
             else
@@ -72,12 +72,12 @@ namespace ns_compiler
                 waitpid(pid, nullptr, 0);
                 if (FileUtil::IsFileExist(PathUtil::Exe(file_name).c_str()))
                 {
-                    LOG(LogLevel::INFO) << PathUtil::Src(file_name).c_str() << "编译成功" << std::endl;
+                    LOG(LogLevel::INFO) << PathUtil::Src(file_name).c_str() << "编译成功";
                     return true;
                 }
             }
 
-            LOG(LogLevel::ERROR) << PathUtil::Src(file_name).c_str() <<  "编译失败" << std::endl;
+            LOG(LogLevel::ERROR) << PathUtil::Src(file_name).c_str() <<  "编译失败";
             return false;
         }
     };

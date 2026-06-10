@@ -13,11 +13,14 @@
 
 #include "boost/algorithm/string.hpp"
 #include "../third_party/include/mysql.h"
+#include "log.hpp"
 
 #include <argon2.h>
 
 namespace ns_util
 {
+    using namespace ns_log;
+
     static const std::string temp = "./temp/";
     static const std::string oj_questions = "oj_questions";
     static const std::string oj_users = "oj_users";
@@ -230,9 +233,7 @@ namespace ns_util
             MYSQL *mysql = mysql_init(nullptr);
             if (mysql == nullptr)
             {
-                // 由于log.hpp里面包含了util.hpp, 这里不能直接调用LOG宏, 否则会导致死循环
-                // 后面重构log.hpp
-                // LOG(LogLevel::FATAL) << "mysql_init failed" << std::endl;
+                // LOG(LogLevel::FATAL) << "mysql_init failed";
                 return nullptr;
             }
 
@@ -242,11 +243,11 @@ namespace ns_util
             // 连接数据库
             if (mysql_real_connect(mysql, host.c_str(), user.c_str(), passwd.c_str(), db.c_str(), port, nullptr, 0) == nullptr)
             {
-                // LOG(LogLevel::FATAL) << "mysql_real_connet failed" << std::endl;
+                // LOG(LogLevel::FATAL) << "mysql_real_connet failed";
                 mysql_close(mysql);
                 return nullptr;
             }
-            // LOG(LogLevel::INFO) << "connect mysql success" << std::endl;
+            //LOG(LogLevel::INFO) << "connect mysql success";
             return mysql;
         }
 

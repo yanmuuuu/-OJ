@@ -92,7 +92,7 @@ namespace ns_control
         LoadBlance()
         {
             assert(LoadConf(conf_path));
-            LOG(LogLevel::FATAL) << "文件 : " << conf_path << " 内容获取成功" << std::endl;
+            LOG(LogLevel::FATAL) << "文件 : " << conf_path << " 内容获取成功";
         }
 
         ~LoadBlance()
@@ -105,7 +105,7 @@ namespace ns_control
             std::ifstream in(conf_path);
             if (!in.is_open())
             {
-                LOG(LogLevel::FATAL) << "文件 : " << conf_path << " 内容获取失败" << std::endl;
+                LOG(LogLevel::FATAL) << "文件 : " << conf_path << " 内容获取失败";
                 return false;
             }
             std::string line;
@@ -115,7 +115,7 @@ namespace ns_control
                 StringUtil::SplitString(line, target, ":");
                 if (target.size() != 2)
                 {
-                    LOG(LogLevel::WARNING) << "切割 : " << line << " 失败" << std::endl;
+                    LOG(LogLevel::WARNING) << "切割 : " << line << " 失败";
                     continue;
                 }
                 Machine m;
@@ -137,7 +137,7 @@ namespace ns_control
             int online_num = _online.size();
             if (online_num == 0)
             {
-                LOG(LogLevel::FATAL) << "当前没有服务器运行!" << std::endl;
+                LOG(LogLevel::FATAL) << "当前没有服务器运行!";
                 _mutex.unlock();
                 return false;
             }
@@ -180,7 +180,7 @@ namespace ns_control
             _online.insert(_online.end(), _offline.begin(), _offline.end());
             _offline.erase(_offline.begin(), _offline.end());
             _mutex.unlock();
-            LOG(INFO) << "所有的主机有上线啦!" << "\n";
+            LOG(LogLevel::INFO) << "所有的主机有上线啦!";
         }
 
     private:
@@ -251,7 +251,7 @@ namespace ns_control
                 out_json = BuildAuthJson(4, "系统繁忙，请稍后重试");
                 return;
             }
-
+            LOG(LogLevel::INFO) << "用户名 : " << username << " 注册成功";
             out_json = BuildAuthJson(0, "注册成功");
         }
 
@@ -304,6 +304,7 @@ namespace ns_control
             Json::Value data;
             data["username"] = uc.user.username;
             data["nickname"] = uc.user.nickname;
+            LOG(LogLevel::INFO) << "用户名 : " << username << "登录成功";
             out_json = BuildAuthJson(0, "登录成功", &data);
         }                 
 
@@ -445,7 +446,7 @@ namespace ns_control
                 {
                     std::cerr << "HTTP 请求失败, 错误码: " << static_cast<int>(res.error())
                               << std::endl;
-                    LOG(ERROR) << " 当前请求的主机id: " << id << " 详情: " << machine->_ip << ":" << machine->_port << " 可能已经离线" << ", 此时load -> " << machine->GetLoad() << std::endl;
+                    LOG(LogLevel::ERROR) << " 当前请求的主机id: " << id << " 详情: " << machine->_ip << ":" << machine->_port << " 可能已经离线" << ", 此时load -> " << machine->GetLoad();
                     machine->DecLoad();
                     _loadblance.OfflineMachine(id);
                 }
@@ -536,7 +537,7 @@ namespace ns_control
         bool ValidateUsernameBasic(const std::string &username, std::string &errmsg, int &errcode)
         {
             // 长度
-            if (username.size() < 1 || username.size() > 16)
+            if (username.size() < 3 || username.size() > 16)
             {
                 errmsg = "用户名长度不合规";
                 errcode = 3;

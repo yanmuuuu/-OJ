@@ -8,6 +8,9 @@ using namespace httplib;
 
 int main(int argc, char* argv[])
 {
+    //LOG日志打印到终端
+    Enable_Console_Log_Strategy;
+
     if (argc != 2)
     {
         std::cerr << "Use : " << argv[0] << " port" << std::endl;
