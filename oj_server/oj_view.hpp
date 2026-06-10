@@ -4,7 +4,7 @@
 
 #include <ctemplate/template.h>
 
-#include "oj_model_mysql.hpp"
+#include "oj_model_sql_que.hpp"
 
 namespace ns_view
 {
@@ -60,6 +60,30 @@ namespace ns_view
             if (!tpl)
             {
                 html = "模板文件加载失败: ./template/one_question.html";
+                return;
+            }
+            tpl->Expand(&html, &dict);
+        }
+
+        void LoginExpandHtml(std::string &html)
+        {
+            ctemplate::TemplateDictionary dict("login");
+            ctemplate::Template *tpl = ctemplate::Template::GetTemplate("./template/login.html", ctemplate::DO_NOT_STRIP);
+            if (!tpl)
+            {
+                html = "模板文件加载失败: ./template/login.html";
+                return;
+            }
+            tpl->Expand(&html, &dict);
+        }
+
+        void RegisterExpandHtml(std::string &html)
+        {
+            ctemplate::TemplateDictionary dict("register");
+            ctemplate::Template *tpl = ctemplate::Template::GetTemplate("./template/register.html", ctemplate::DO_NOT_STRIP);
+            if (!tpl)
+            {
+                html = "模板文件加载失败: ./template/register.html";
                 return;
             }
             tpl->Expand(&html, &dict);

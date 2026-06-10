@@ -11,7 +11,8 @@
 
 #include "../comm/log.hpp"
 #include "../comm/util.hpp"
-#include "oj_model_mysql.hpp"
+#include "oj_model_sql_que.hpp"
+#include "oj_model_sql_usr.hpp"
 #include "oj_view.hpp"
 #include "../comm/httplib.h"
 
@@ -205,39 +206,162 @@ namespace ns_control
         {
         }
 
-        static std::string BuildJudgeErrorJson(int status, const std::string &reason)
+        // 注册
+        void Register(const std::string &in_json, std::string &out_json)
         {
-            Json::Value root;
-            root["status"] = status;
-            root["reason"] = reason;
-            Json::StreamWriterBuilder builder;
-            builder["indentation"] = "";
-            builder["emitUTF8"] = true;
-            return Json::writeString(builder, root);
-        }
-
-        static void SanitizeJudgeResponse(std::string &out_json)
-        {
-            // 仅处理 oj_server 无法连通 compile_server 的情况，其余原样透传 compile_run 的 JSON
-            if (out_json.empty())
+            Json::Value in_root;
+            Json::Reader in_reader;
+            if (!in_reader.parse(in_json, in_root) ||
+                !in_root.isMember("username") ||
+                !in_root.isMember("password") ||
+                !in_root.isMember("confirm_password"))
             {
-                out_json = BuildJudgeErrorJson(-2, "判题服务暂时不可用，请稍后重试");
+                out_json = BuildAuthJson(3, "请求格式不合法");
                 return;
             }
 
-            Json::Value root;
-            Json::Reader reader;
-            if (!reader.parse(out_json, root) || !root.isObject() || !root.isMember("status"))
+            std::string username = in_root["username"].asString();
+            std::string password = in_root["password"].asString();
+            std::string confirm_password = in_root["confirm_password"].asString();
+
+            std::string errmsg;
+            int errcode = 0;
+
+            if (!ValidateUsernameStrength(username, errmsg, errcode))
             {
-                out_json = BuildJudgeErrorJson(-2, "判题服务暂时不可用，请稍后重试");
+                out_json = BuildAuthJson(errcode, errmsg);
+                return;
             }
+
+            if (!ValidatePasswordStrength(password, errmsg, errcode))
+            {
+                out_json = BuildAuthJson(errcode, errmsg);
+                return;
+            }
+
+            if (password != confirm_password)
+            {
+                out_json = BuildAuthJson(2, "两次输入的密码不一致");
+                return;
+            }
+
+            std::string crypto_password = CryptoUtil::HashPassword(password);
+            if (crypto_password.empty() || !_model_users.InsertUser(username, crypto_password, username))
+            {
+                out_json = BuildAuthJson(4, "系统繁忙，请稍后重试");
+                return;
+            }
+
+            out_json = BuildAuthJson(0, "注册成功");
+        }
+
+        //登录
+        void Login(const std::string &in_json, std::string &out_json, std::string &set_cookie)
+        {
+            set_cookie.clear();
+            Json::Value in_root;
+            Json::Reader in_reader;
+            if (!in_reader.parse(in_json, in_root) ||
+                !in_root.isMember("username") ||
+                !in_root.isMember("password"))
+            {
+                out_json = BuildAuthJson(3, "请求格式不合法");
+                return;
+            }
+            std::string username = in_root["username"].asString();
+            std::string password = in_root["password"].asString();
+            std::string errmsg;
+            int errcode = 0;
+            if (!ValidateUsernameBasic(username, errmsg, errcode))
+            {
+                out_json = BuildAuthJson(errcode, errmsg);
+                return;
+            }
+
+            if (!ValidatePasswordStrength(password, errmsg, errcode))
+            {
+                out_json = BuildAuthJson(errcode, errmsg);
+                return;
+            }
+
+            UserCredential uc;
+            if (!_model_users.GetUserByName(username, uc) ||
+                !CryptoUtil::VerifyPassword(password, uc.password_hash))
+            {
+                out_json = BuildAuthJson(1, "用户名或密码错误");
+                return;
+            }
+
+            std::string session_id = CryptoUtil::RandomHex(32);
+            if (session_id.empty() ||
+                !_model_users.CreateSession(session_id, uc.user.id, SessionExpireAt()))
+            {
+                out_json = BuildAuthJson(4, "系统繁忙，请稍后重试");
+                return;
+            }
+            set_cookie = "session_id=" + session_id
+                        + "; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800";
+            Json::Value data;
+            data["username"] = uc.user.username;
+            data["nickname"] = uc.user.nickname;
+            out_json = BuildAuthJson(0, "登录成功", &data);
+        }                 
+
+        // 登出
+        void Logout(const Request &req, std::string &out_json, std::string &set_cookie)
+        {
+            std::string session_id = ParseSessionId(req);
+            if (!session_id.empty())
+                _model_users.DeleteSession(session_id);
+            set_cookie = "session_id=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0";
+            out_json = BuildAuthJson(0, "已退出");
+        }
+
+        // 登录页
+        bool LoginPage(std::string &html)
+        {
+            _view.LoginExpandHtml(html);
+            return true;
+        }
+
+        // 注册页
+        bool RegisterPage(std::string &html)
+        {
+            _view.RegisterExpandHtml(html);
+            return true;
+        }
+
+        // 获取当前登录用户信息
+        void Me(const Request &req, std::string &out_json)
+        {
+            _model_users.DeleteExpiredSessions();
+
+            std::string session_id = ParseSessionId(req);
+            if (session_id.empty())
+            {
+                out_json = BuildAuthJson(0, "已退出"); //无data字段表示没登陆
+                return;
+            }
+            
+            User user;
+            if (!_model_users.GetUserBySession(session_id, user))
+            {
+                _model_users.DeleteSessionIfExpired(session_id);
+                out_json = BuildAuthJson(0, "已退出"); //无data字段表示没登陆
+                return;
+            }
+
+            Json::Value data;
+            data["username"] = user.username;
+            data["nickname"] = user.nickname;
+            out_json = BuildAuthJson(0, "ok", &data);
         }
 
         // 获取全部题目网页
         bool AllQuestions(std::string &html)
         {
             std::vector<Question> questions;
-            if (_model.GetAllQuestions(questions))
+            if (_model_questions.GetAllQuestions(questions))
             {
                 std::sort(questions.begin(), questions.end(), [](const Question &q1, const Question &q2)
                           { return stoi(q1.number) < stoi(q2.number); });
@@ -255,7 +379,7 @@ namespace ns_control
         bool OneQuestion(const std::string &number, std::string &html)
         {
             Question question;
-            if (_model.GetOneQuestion(number, question))
+            if (_model_questions.GetOneQuestion(number, question))
             {
                 _view.OneExpandHtml(question, html);
                 return true;
@@ -272,7 +396,7 @@ namespace ns_control
         {
             // 1.获取指定题目详细信息
             Question q;
-            _model.GetOneQuestion(number, q);
+            _model_questions.GetOneQuestion(number, q);
 
             // 2.读取客户发送的in_json串
             Json::Value in_root;
@@ -303,7 +427,7 @@ namespace ns_control
 
                 client.set_read_timeout(15);
                 client.set_write_timeout(15);
-                
+
                 machine->IncLoad();
                 LOG(LogLevel::INFO) << "选择服务器成功, id -> " << id << ", 具体信息 -> " << machine->_ip << " : " << machine->_port << ", 此时load -> " << machine->GetLoad() << std::endl;
                 auto res = client.Post("/compile_and_run", compile_str, "application/json;charset=utf-8");
@@ -335,8 +459,167 @@ namespace ns_control
         }
 
     private:
-        Model _model;           // 提供数据
-        View _view;             // 渲染网页
-        LoadBlance _loadblance; // 负载均衡
+        // 判题用的辅助函数
+        static std::string BuildJudgeErrorJson(int status, const std::string &reason)
+        {
+            Json::Value root;
+            root["status"] = status;
+            root["reason"] = reason;
+            Json::StreamWriterBuilder builder;
+            builder["indentation"] = "";
+            builder["emitUTF8"] = true;
+            return Json::writeString(builder, root);
+        }
+
+        static void SanitizeJudgeResponse(std::string &out_json)
+        {
+            // 仅处理 oj_server 无法连通 compile_server 的情况，其余原样透传 compile_run 的 JSON
+            if (out_json.empty())
+            {
+                out_json = BuildJudgeErrorJson(-2, "判题服务暂时不可用，请稍后重试");
+                return;
+            }
+
+            Json::Value root;
+            Json::Reader reader;
+            if (!reader.parse(out_json, root) || !root.isObject() || !root.isMember("status"))
+            {
+                out_json = BuildJudgeErrorJson(-2, "判题服务暂时不可用，请稍后重试");
+            }
+        }
+
+    private:
+        // 登陆, 注册, 登出, 选择账户 用的辅助函数
+        // 从 HTTP 请求的 Cookie 头中提取 session_id
+        std::string ParseSessionId(const Request &req)
+        {
+            std::string cookie = req.get_header_value("Cookie");
+            const std::string key = "session_id=";
+            size_t pos = cookie.find(key);
+            if (pos == std::string::npos)
+                return "";
+            pos += key.size();
+            size_t end = cookie.find(';', pos);
+            if (end == std::string::npos)
+                return cookie.substr(pos);
+            return cookie.substr(pos, end - pos);
+        }
+
+        // 生成统一的认证响应 JSON 格式，包含错误码、错误信息和可选的捎带数据
+        std::string BuildAuthJson(int errcode, const std::string &errmsg, const Json::Value *data = nullptr)
+        {
+            Json::Value root;
+            root["errcode"] = errcode;
+            root["errmsg"] = errmsg;
+            if (data != nullptr)
+            {
+                root["data"] = *data;
+            }
+            Json::StreamWriterBuilder builder;
+            builder["indentation"] = "";
+            builder["emitUTF8"] = true;         
+            return Json::writeString(builder, root);
+        }
+
+        // 返回会话过期的绝对时间，用于设置 Cookie 的 Max-Age 或存储时的过期字段
+        std::string SessionExpireAt()
+        {
+            time_t expire = time(nullptr) + 7 * 24 * 3600; //7天
+            struct tm t;
+            localtime_r(&expire, &t);
+            char buf[20];
+            strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &t);
+            return std::string(buf);
+        }
+
+        // 校验用户名合法性, 当前只检验长度
+        bool ValidateUsernameBasic(const std::string &username, std::string &errmsg, int &errcode)
+        {
+            // 长度
+            if (username.size() < 1 || username.size() > 16)
+            {
+                errmsg = "用户名长度不合规";
+                errcode = 3;
+                return false;
+            }
+            return true;
+        }
+
+        // 严格校验用户名合法性
+        bool ValidateUsernameStrength(const std::string &username, std::string &errmsg, int &errcode)
+        {
+            // 1.检验长度
+            if (!ValidateUsernameBasic(username, errmsg, errcode))
+            {
+                return false;
+            }
+            // 2.是否已经存在
+            if (_model_users.UsernameExists(username))
+            {
+                errmsg = "该用户名已存在";
+                errcode = 1;
+                return false;
+            }
+            return true;
+        }
+
+        // 校验密码强度（最小长度、是否包含数字/字母/特殊字符等）
+        // 只校验密码最基本的长度
+        bool ValidatePasswordBasic(const std::string &password, std::string &errmsg, int &errcode)
+        {
+            if (password.size() < 8 || password.size() > 65)
+            {
+                errmsg = "密码长度不合规";
+                errcode = 3;
+                return false;
+            }
+            return true;
+        }
+        // 严格校验密码
+        bool ValidatePasswordStrength(const std::string &password, std::string &errmsg, int &errcode)
+        {
+            // 1.长度
+            if (!ValidatePasswordBasic(password, errmsg, errcode))
+            {
+                return false;
+            }
+
+            // 2.包含至少两种特殊字符
+            int has_upper = 0;
+            int has_lower = 0;
+            int has_digit = 0;
+            int has_special = 0;
+            const std::string special_chars = "!@#$%^&*()_+-=[]{};':\",./<>?\\|`~";
+            for (char c : password)
+            {
+                if (isupper(c))
+                    has_upper = 1;
+                else if (islower(c))
+                    has_lower = 1;
+                else if (isdigit(c))
+                    has_digit = 1;
+                else if (special_chars.find(c) != std::string::npos)
+                    has_special = 1;
+                else
+                {
+                    errcode = 3;
+                    errmsg = "密码含有未定义符号(" + c + ')';
+                    return false;
+                }
+            }
+            if ((has_upper + has_lower + has_digit + has_special) < 2)
+            {
+                errcode = 3;
+                errmsg = "密码必须包含至少两种类型(大写字母、小写字母、数字或特殊字符)";
+                return false;
+            }
+            return true;
+        }
+
+    private:
+        ModelQuestions _model_questions; // 提供题目数据
+        ModelUsers _model_users;         // 提供用户数据
+        View _view;                      // 渲染网页
+        LoadBlance _loadblance;          // 负载均衡
     };
 }

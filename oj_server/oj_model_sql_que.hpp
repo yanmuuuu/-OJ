@@ -7,7 +7,7 @@
 
 #include "../comm/log.hpp"
 #include "../comm/util.hpp"
-#include "include/mysql.h"
+#include "../third_party/include/mysql.h"
 
 //根据questions.list将所有题目文件添加到内存中
 //该模块用来和数据交互,将数据交给外部
@@ -29,14 +29,14 @@ namespace ns_model
         int mem_limit;         //空间限制
     };
 
-    class Model
+    class ModelQuestions
     {
     public:
-        Model()
+        ModelQuestions()
         {
         }
 
-        ~Model()
+        ~ModelQuestions()
         {}
 
         bool QueryMysqlSelect(const std::string& sql, std::vector<Question>& out)

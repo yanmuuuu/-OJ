@@ -4,13 +4,17 @@
 #include <string>
 #include <fstream>
 #include <atomic>
+#include <iomanip>
+#include <functional>
 
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
 
 #include "boost/algorithm/string.hpp"
-#include "../oj_server/include/mysql.h"
+#include "../third_party/include/mysql.h"
+
+#include <argon2.h>
 
 namespace ns_util
 {
@@ -250,6 +254,71 @@ namespace ns_util
         {
             if (mysql)
                 mysql_close(mysql);
+        }
+    };
+
+    class CryptoUtil
+    {
+    public:
+        // 注册：生成 PHC 编码串，直接写入 oj_users.password
+        // plain : 用户输入的明文密码
+        static std::string HashPassword(const std::string &plain)
+        {
+            uint8_t salt[16];  // 16 字节盐
+            uint8_t hash[32];  // 32 字节原始哈希
+            char encoded[128]; // 足够容纳编码串
+
+            // 从 /dev/urandom 读取随机盐
+            std::ifstream urandom("/dev/urandom", std::ios::binary);
+            if (!urandom)
+                return "";
+            urandom.read(reinterpret_cast<char *>(salt), sizeof(salt));
+            if (urandom.gcount() != sizeof(salt))
+                return "";
+
+            int result = argon2id_hash_encoded(
+                3,                           //(时间成本)
+                65536,                       //(内存成本)
+                4,                           //(并行度[线程数])
+                plain.c_str(), plain.size(), //(明文)
+                salt, sizeof(salt),
+                sizeof(hash),
+                encoded, sizeof(encoded));
+
+            if (result != ARGON2_OK)
+                return "";
+            return std::string(encoded);
+        }
+
+        // 登录：与库中 stored 比对
+        static bool VerifyPassword(const std::string &plain, const std::string &stored)
+        {
+            if (stored.empty())
+            {
+                return false;
+            }
+            int result = argon2_verify(stored.c_str(), plain.c_str(), plain.size(), Argon2_id);
+            return result == ARGON2_OK;
+        }
+
+        // session_id：32 字节随机 → 64 位 hex
+        static std::string RandomHex(size_t nbytes = 32)
+        {
+            std::vector<uint8_t> buffer(nbytes);
+            std::ifstream urandom("/dev/urandom", std::ios::binary);
+            if (!urandom)
+                return "";
+            urandom.read(reinterpret_cast<char *>(buffer.data()), nbytes);
+            if (urandom.gcount() != static_cast<std::streamsize>(nbytes))
+                return "";
+
+            std::ostringstream oss;
+            oss << std::hex << std::setfill('0');
+            for (uint8_t b : buffer)
+            {
+                oss << std::setw(2) << static_cast<int>(b);
+            }
+            return oss.str();
         }
     };
 }

@@ -30,16 +30,16 @@ namespace ns_model
         std::string tail;      //系统代码
     };
 
-    class Model
+    class ModelQuestions
     {
     public:
-        Model()
+        ModelQuestions()
         {
             assert(LoadQuestionList(question_list));
             LOG(LogLevel::INFO) << "题库加载成功" << std::endl;
         }
 
-        ~Model()
+        ~ModelQuestions()
         {}
 
         bool LoadQuestionList(const std::string& question_list)
