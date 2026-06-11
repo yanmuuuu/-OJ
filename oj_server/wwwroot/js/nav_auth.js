@@ -10,6 +10,7 @@
 
     function renderLoggedIn(nickname) {
         nav.innerHTML =
+            '<a class="navbar-link" href="/submit_question">录题</a>' +
             '<span class="navbar-user">' + escapeHtml(nickname) + '</span>' +
             '<button type="button" class="navbar-logout" id="navLogout">退出</button>';
         const btn = document.getElementById('navLogout');

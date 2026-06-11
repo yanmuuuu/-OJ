@@ -34,6 +34,7 @@ namespace ns_view
                 sub_dict->SetValue("STAR", q.star);
                 sub_dict->SetValue("CPU_LIMIT", std::to_string(q.cpu_limit));
                 sub_dict->SetValue("MEM_LIMIT", std::to_string(q.mem_limit));
+                sub_dict->SetValue("AUTHOR_NAME", q.author_name.empty() ? "官方" : q.author_name);
             }
 
             // 加载模板
@@ -57,6 +58,7 @@ namespace ns_view
             dict.SetValue("CPU_LIMIT", std::to_string(question.cpu_limit));
             dict.SetValue("MEM_LIMIT", std::to_string(question.mem_limit));
             dict.SetValue("DESC", question.desc);
+            dict.SetValue("AUTHOR_NAME", question.author_name.empty() ? "官方" : question.author_name);
 
             // 重要：只提供 head.cpp 内容（函数签名/框架），让用户填写函数体
             dict.SetValue("CODE", question.head); // 而不是 head + tail
@@ -89,6 +91,30 @@ namespace ns_view
             if (!tpl)
             {
                 html = "模板文件加载失败: register.html";
+                return;
+            }
+            tpl->Expand(&html, &dict);
+        }
+
+        void SubmitQuestionExpandHtml(std::string &html)
+        {
+            ctemplate::TemplateDictionary dict("submit_question");
+            ctemplate::Template *tpl = ctemplate::Template::GetTemplate(FileUtil::GetProjectPath("./template/submit_question.html"), ctemplate::DO_NOT_STRIP);
+            if (!tpl)
+            {
+                html = "模板文件加载失败: submit_question.html";
+                return;
+            }
+            tpl->Expand(&html, &dict);
+        }
+
+        void AboutExpandHtml(std::string &html)
+        {
+            ctemplate::TemplateDictionary dict("about");
+            ctemplate::Template *tpl = ctemplate::Template::GetTemplate(FileUtil::GetProjectPath("./template/about.html"), ctemplate::DO_NOT_STRIP);
+            if (!tpl)
+            {
+                html = "模板文件加载失败: about.html";
                 return;
             }
             tpl->Expand(&html, &dict);

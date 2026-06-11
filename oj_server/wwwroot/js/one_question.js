@@ -264,7 +264,12 @@
         var resultStatus = document.getElementById('resultStatus');
         var resultBody = document.getElementById('resultBody');
         var resultHeader = document.getElementById('resultHeader');
+        var resultBanner = document.getElementById('resultBanner');
+        var resultBannerIcon = document.getElementById('resultBannerIcon');
+        var resultBannerText = document.getElementById('resultBannerText');
         var collapsed = false;
+
+        var BANNER_ICONS = { success: '✓', error: '✗', compile: '!', warning: '~' };
 
         resultHeader.addEventListener('click', function() {
             collapsed = !collapsed;
@@ -282,6 +287,14 @@
             resultStatus.textContent = verdict.text;
             resultStatus.className = 'result-status ' + verdict.cls;
             resultBody.innerHTML = html;
+
+            if (resultBanner && resultBannerIcon && resultBannerText) {
+                resultBanner.className = 'result-banner ' + verdict.cls;
+                resultBannerIcon.textContent = BANNER_ICONS[verdict.cls] || '·';
+                resultBannerText.textContent = verdict.text;
+                resultBanner.classList.remove('hidden');
+            }
+
             resultPanel.classList.remove('hidden', 'collapsed');
             collapsed = false;
             document.getElementById('resultToggle').textContent = '收起';

@@ -14,7 +14,9 @@ CREATE TABLE `oj_questions`  (
   `tail` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '题目测试用例',
   `cpu_limit` int NOT NULL COMMENT '题目最大运行时间',
   `mem_limit` int NOT NULL COMMENT '题目最大运行空间',
-  PRIMARY KEY (`number` DESC) USING BTREE
+  `author_id` int unsigned NULL DEFAULT NULL COMMENT '出题用户 id，NULL 表示官方',
+  PRIMARY KEY (`number` DESC) USING BTREE,
+  KEY `idx_author_id` (`author_id`)
 ) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
 
 SET FOREIGN_KEY_CHECKS = 1;

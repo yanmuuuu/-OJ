@@ -7,8 +7,15 @@
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
+    <div class="spotlight" id="spotlight" aria-hidden="true"></div>
     <nav class="navbar">
-        <a class="navbar-brand" href="/all_questions">Online Judge</a>
+        <div class="navbar-start">
+            <a class="navbar-brand" href="/all_questions">Online Judge</a>
+            <div class="navbar-nav-links">
+                <a class="navbar-link" href="/all_questions">题库</a>
+                <a class="navbar-link" href="/about">关于</a>
+            </div>
+        </div>
         <div class="navbar-auth" id="navAuth"></div>
     </nav>
 
@@ -32,6 +39,7 @@
         </div>
     </main>
 
+    <script src="/js/effects.js"></script>
     <script src="/js/nav_auth.js"></script>
     <script src="/js/auth.js"></script>
 </body>

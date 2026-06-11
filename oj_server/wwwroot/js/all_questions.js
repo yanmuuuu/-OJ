@@ -16,7 +16,8 @@ document.addEventListener('DOMContentLoaded', function() {
         cards.forEach(function(card) {
             var title = (card.dataset.title || '').toLowerCase();
             var number = (card.dataset.number || '').toLowerCase();
-            var match = !term || title.indexOf(term) !== -1 || number.indexOf(term) !== -1;
+            var author = (card.dataset.author || '').toLowerCase();
+            var match = !term || title.indexOf(term) !== -1 || number.indexOf(term) !== -1 || author.indexOf(term) !== -1;
             card.style.display = match ? '' : 'none';
             if (match) visible++;
         });

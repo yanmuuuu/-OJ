@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>关于 · OJ</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="spotlight" id="spotlight" aria-hidden="true"></div>
+    <nav class="navbar">
+        <div class="navbar-start">
+            <a class="navbar-brand" href="/all_questions">Online Judge</a>
+            <div class="navbar-nav-links">
+                <a class="navbar-link" href="/all_questions">题库</a>
+                <a class="navbar-link navbar-link-active" href="/about">关于</a>
+            </div>
+        </div>
+        <div class="navbar-auth" id="navAuth"></div>
+    </nav>
+
+    <main class="about-page">
+        <header class="about-hero">
+            <h1 class="about-title">关于 Online Judge</h1>
+            <p class="about-lead">基于 C++ 的分布式在线编程评测平台</p>
+        </header>
+
+        <div class="about-grid">
+            <section class="glass-card about-card">
+                <h2 class="about-section-title">个人</h2>
+                <dl class="about-list">
+                    <div class="about-item">
+                        <dt>开发者</dt>
+                        <dd>yanmuuuu</dd>
+                    </div>
+                    <div class="about-item">
+                        <dt>项目链接</dt>
+                        <dd>
+                            <a class="about-link" href="https://github.com/yanmuuuu/-OJ" target="_blank" rel="noopener noreferrer">GitHub · OnlineJudge</a>
+                        </dd>
+                    </div>
+                    <div class="about-item">
+                        <dt>CSDN 博客</dt>
+                        <dd>
+                            <a class="about-link" href="https://yanmuuuu.blog.csdn.net" target="_blank" rel="noopener noreferrer">yanmuuuu 的技术博客</a>
+                        </dd>
+                    </div>
+                </dl>
+            </section>
+
+            <section class="glass-card about-card about-card-wide">
+                <h2 class="about-section-title">版权说明</h2>
+                <p class="about-project-name">OnlineJudge</p>
+                <p class="about-tagline">C++ Distributed Online OJ Platform with Load Balanced Compile Servers</p>
+
+                <div class="about-block">
+                    <p class="about-block-label">版权说明</p>
+                    <p class="about-text">此项目基于 C++ 分布式架构在线 OJ 平台，仅供学习使用。禁止用于商业目的。</p>
+                </div>
+
+                <div class="about-block">
+                    <p class="about-block-label">项目简介</p>
+                    <p class="about-text">基于 C++17 的分布式在线编程评测系统。用户可以在线浏览题库、编写代码、提交判题并查看运行结果。系统采用前后端分离与多编译服务器负载均衡：主服务器处理 HTTP 请求与业务逻辑，编译服务器集群负责代码编译与进程隔离运行。</p>
+                    <ul class="about-features">
+                        <li>分布式判题与负载均衡</li>
+                        <li>在线 Ace 代码编辑器</li>
+                        <li>用户注册登录与题目录入</li>
+                        <li>MySQL 持久化题库管理</li>
+                    </ul>
+                </div>
+            </section>
+        </div>
+
+        <footer class="about-footer">
+            <p>© 2026 yanmuuuu · Online Judge. All rights reserved.</p>
+        </footer>
+    </main>
+
+    <script src="/js/effects.js"></script>
+    <script src="/js/nav_auth.js"></script>
+</body>
+</html>

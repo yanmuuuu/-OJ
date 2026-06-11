@@ -26,7 +26,7 @@ namespace ns_model
         std::string password_hash; // 库里的 password 字段
     };
 
-    class ModelUsers
+    class ModelUser
     {
     public:
         //判断用户名是否存在

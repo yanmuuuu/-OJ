@@ -86,6 +86,24 @@ int main(int argc, char *argv[])
         resp.set_content(html, "text/html;charset=utf-8");
     });
 
+    svr.Get("/about", [&ctl](const Request &req, Response &resp) {
+        std::string html;
+        ctl.AboutPage(html);
+        resp.set_content(html, "text/html;charset=utf-8");
+    });
+
+    svr.Post("/api/submit_question", [&ctl](const Request &req, Response &resp) {
+        std::string out_json;
+        ctl.SubmitQuestion(req, req.body, out_json);
+        resp.set_content(out_json, "application/json;charset=utf-8");
+    });
+
+    svr.Get("/submit_question", [&ctl](const Request &req, Response &resp) {
+        std::string html;
+        ctl.SubmitQuestionPage(html);
+        resp.set_content(html, "text/html;charset=utf-8");
+    });
+
     svr.set_base_dir("./wwwroot");
     svr.listen("0.0.0.0", atoi(argv[1]));
 

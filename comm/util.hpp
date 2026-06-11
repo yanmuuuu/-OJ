@@ -6,6 +6,7 @@
 #include <atomic>
 #include <iomanip>
 #include <functional>
+#include <time.h>
 
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -13,6 +14,7 @@
 
 #include "boost/algorithm/string.hpp"
 #include "../third_party/include/mysql.h"
+#include "httplib.h"
 #include "log.hpp"
 
 #include <argon2.h>
@@ -20,6 +22,7 @@
 namespace ns_util
 {
     using namespace ns_log;
+    using namespace httplib;
 
     static const std::string temp = "./temp/";
     static const std::string oj_questions = "oj_questions";
@@ -193,6 +196,33 @@ namespace ns_util
             return true;
         }
 
+        // 执行 INSERT，成功时返回自增主键（同一连接内 mysql_insert_id）
+        static bool ExecuteInsert(const std::string &sql, unsigned long long &insert_id)
+        {
+            insert_id = 0;
+            MYSQL *mysql = Connect();
+            if (mysql == nullptr)
+                return false;
+
+            if (mysql_query(mysql, sql.c_str()) != 0)
+            {
+                Close(mysql);
+                return false;
+            }
+
+            //确保单行插入
+            if (mysql_affected_rows(mysql) != 1)
+            {
+                Close(mysql);
+                return false;
+            }
+
+            //拿到递增主键
+            insert_id = mysql_insert_id(mysql);
+            Close(mysql);
+            return insert_id != 0;
+        }
+
         // 执行 SELECT，每行调用 handler；handler 返回 false 则提前结束
         static bool Query(const std::string &sql, const std::function<bool(MYSQL_ROW)> &handler)
         {
@@ -339,6 +369,25 @@ namespace ns_util
                 oss << std::setw(2) << static_cast<int>(b);
             }
             return oss.str();
+        }
+    };
+
+    class CookieUtil
+    {
+    public:
+        //从网页发来的req里面提取seesion_id
+        static std::string ParseSessionId(const Request &req)
+        {
+            std::string cookie = req.get_header_value("Cookie");
+            const std::string key = "session_id=";
+            size_t pos = cookie.find(key);
+            if (pos == std::string::npos)
+                return "";
+            pos += key.size();
+            size_t end = cookie.find(';', pos);
+            if (end == std::string::npos)
+                return cookie.substr(pos);
+            return cookie.substr(pos, end - pos);
         }
     };
 }

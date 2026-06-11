@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>录入题目 · OJ</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="spotlight" id="spotlight" aria-hidden="true"></div>
+
+    <nav class="navbar">
+        <div class="navbar-start">
+            <a class="navbar-brand" href="/all_questions">Online Judge</a>
+            <div class="navbar-nav-links">
+                <a class="navbar-link" href="/all_questions">题库</a>
+                <a class="navbar-link" href="/about">关于</a>
+            </div>
+        </div>
+        <div class="navbar-auth" id="navAuth"></div>
+    </nav>
+
+    <main class="submit-layout">
+        <div class="submit-main">
+            <div class="glass-card submit-card">
+                <header class="submit-header">
+                    <h1 class="submit-title">录入题目</h1>
+                    <p class="submit-subtitle">填写表单后可在右侧实时预览；点击「做题页预览」查看与正式做题相同的布局。</p>
+                </header>
+
+                <div class="submit-example-bar">
+                    <div class="submit-example-actions">
+                        <span class="submit-example-label">快速开始</span>
+                        <button type="button" class="submit-example-btn" id="fillExampleBtn">填入「两数之和」示例</button>
+                        <button type="button" class="submit-undo-btn hidden" id="undoExampleBtn">撤回</button>
+                    </div>
+                    <p class="submit-example-hint hidden" id="exampleHint">已填入示例，点击「撤回」可恢复先前内容</p>
+                </div>
+
+                <form class="submit-form" id="submitQuestionForm">
+                    <div class="submit-row">
+                        <div class="auth-field submit-field-grow">
+                            <label for="title">题目标题</label>
+                            <input type="text" id="title" name="title" placeholder="例如：两数之和" required maxlength="128">
+                        </div>
+                        <div class="auth-field submit-field-star">
+                            <label for="star">难度</label>
+                            <select id="star" name="star" required>
+                                <option value="" disabled selected>请选择</option>
+                                <option value="简单">简单</option>
+                                <option value="中等">中等</option>
+                                <option value="困难">困难</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="submit-row">
+                        <div class="auth-field submit-field-half">
+                            <label for="cpu_limit">时间限制（秒）</label>
+                            <input type="number" id="cpu_limit" name="cpu_limit" min="1" max="60" value="1" required>
+                        </div>
+                        <div class="auth-field submit-field-half">
+                            <label for="mem_limit">内存限制（MB）</label>
+                            <input type="number" id="mem_limit" name="mem_limit" min="1" max="102400" value="30000" required>
+                        </div>
+                    </div>
+
+                    <div class="auth-field">
+                        <label for="desc">题目描述</label>
+                        <textarea id="desc" name="desc" rows="8" placeholder="题目背景、输入输出说明、示例与提示…" required></textarea>
+                    </div>
+
+                    <div class="auth-field">
+                        <label for="head">代码框架（head）</label>
+                        <p class="submit-field-hint">用户做题时 Ace 编辑器中的初始代码。</p>
+                        <textarea id="head" name="head" class="submit-code" rows="10" placeholder="class Solution { ... }" required></textarea>
+                    </div>
+
+                    <div class="auth-field">
+                        <label for="tail">测试驱动（tail）</label>
+                        <p class="submit-field-hint">判题时拼在用户代码之后。预览中不展示 tail，提交后由系统使用。</p>
+                        <textarea id="tail" name="tail" class="submit-code" rows="12" placeholder="test1() ... int main() { ... }" required></textarea>
+                    </div>
+
+                    <p class="auth-error hidden" id="submitError"></p>
+                    <button type="submit" class="auth-submit" id="submitBtn">提交题目</button>
+                </form>
+            </div>
+        </div>
+
+        <aside class="submit-aside">
+            <div class="glass-card preview-sidebar sticky-aside">
+                <div class="preview-sidebar-head">
+                    <h2 class="preview-sidebar-title">实时预览</h2>
+                    <span class="draft-badge hidden" id="draftBadge">已保存草稿</span>
+                </div>
+
+                <div class="preview-mini">
+                    <p class="preview-mini-label">标题</p>
+                    <h3 class="preview-mini-title" id="pvTitle">（未填写）</h3>
+                    <div class="preview-mini-meta" id="pvMeta">
+                        <span class="difficulty preview-star-placeholder">难度</span>
+                        <span class="meta-tag meta-author" id="pvAuthor">出题 · …</span>
+                    </div>
+                    <p class="preview-mini-label">描述摘要</p>
+                    <p class="preview-mini-desc" id="pvDesc">填写题目描述后将在此显示摘要…</p>
+                    <p class="preview-mini-label">代码框架（head）</p>
+                    <pre class="preview-mini-code" id="pvHead"><code>// 填写 head 后预览</code></pre>
+                </div>
+
+                <button type="button" class="preview-open-btn" id="openFullPreview">做题页预览</button>
+                <p class="preview-sidebar-foot">草稿会自动保存到浏览器，刷新页面可恢复。</p>
+            </div>
+        </aside>
+    </main>
+
+    <div class="preview-modal hidden" id="previewModal" role="dialog" aria-modal="true" aria-label="做题页预览">
+        <div class="preview-modal-backdrop" id="previewBackdrop"></div>
+        <div class="preview-modal-shell">
+            <div class="preview-modal-toolbar">
+                <span class="preview-modal-title">做题页预览 · 只读</span>
+                <button type="button" class="preview-close-btn" id="closePreview">关闭</button>
+            </div>
+            <div class="workspace preview-workspace" id="previewWorkspace">
+                <aside class="panel-left glass-panel">
+                    <div class="panel-left-inner">
+                        <h1 class="problem-title" id="modalTitle">预览. 题目标题</h1>
+                        <div class="problem-meta" id="modalMeta"></div>
+                        <div class="problem-divider"></div>
+                        <div class="problem-desc" id="modalDesc"></div>
+                    </div>
+                </aside>
+                <div class="panel-resizer preview-resizer"></div>
+                <section class="panel-right glass-panel-dark">
+                    <div class="editor-header">
+                        <div class="editor-tabs">
+                            <span class="editor-tab active">solution.cpp</span>
+                        </div>
+                        <span class="preview-readonly-tag">只读预览</span>
+                    </div>
+                    <div class="editor-container" id="previewEditor"></div>
+                    <div class="editor-footer preview-footer-note">
+                        预览模式下无法提交判题
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/effects.js"></script>
+    <script src="/js/nav_auth.js"></script>
+    <script src="/js/submit_question.js"></script>
+</body>
+</html>
