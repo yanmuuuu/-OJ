@@ -62,6 +62,7 @@ namespace ns_view
 
             // 重要：只提供 head.cpp 内容（函数签名/框架），让用户填写函数体
             dict.SetValue("CODE", question.head); // 而不是 head + tail
+            dict.SetValue("RUN_CASE", question.run_case);
 
             ctemplate::Template *tpl = ctemplate::Template::GetTemplate(FileUtil::GetProjectPath("./template/one_question.html"), ctemplate::DO_NOT_STRIP);
             if (!tpl)

@@ -30,6 +30,7 @@ namespace ns_model
         int mem_limit;                  //空间限制
         int author_id = 0;              //该题目由谁提供, 0 表示官方
         std::string author_name;        //出题目的用户名 : nickname(如果没有nickname用username)
+        std::string run_case;           //运行用例模板
     };
 
     class ModelQuestions
@@ -55,7 +56,8 @@ namespace ns_model
                 q.cpu_limit = atoi(row[6]);               
                 q.mem_limit = atoi(row[7]);
                 q.author_id = atoi(row[8]);
-                q.author_name = row[9];
+                q.run_case = row[9];
+                q.author_name = row[10];          
                 out.push_back(q);
                 return true;
             });
@@ -102,7 +104,7 @@ namespace ns_model
             std::string sql;
             sql += "INSERT INTO "
                 + oj_questions
-                + " (title, star, `desc`, header, tail, cpu_limit, mem_limit, author_id) VALUES ("
+                + " (title, star, `desc`, header, tail, cpu_limit, mem_limit, author_id, run_case) VALUES ("
                 + "'" + MysqlUtil::Escape(q.title) + "'"
                 + ", '" + MysqlUtil::Escape(q.star) + "'"
                 + ", '" + MysqlUtil::Escape(q.desc) + "'"
@@ -111,6 +113,7 @@ namespace ns_model
                 + ", " + std::to_string(q.cpu_limit)
                 + ", " + std::to_string(q.mem_limit)
                 + ", " + std::to_string(author_id)
+                + ", '" + MysqlUtil::Escape(q.run_case) + "'"
                 + ")";
 
             unsigned long long insert_id = 0;

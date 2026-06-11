@@ -27,6 +27,7 @@ int main(int argc, char *argv[])
     Control ctl;
     ctl_ptr = &ctl;
 
+    //questions
     svr.Get("/all_questions", [&ctl](const Request &req, Response &resp) {
         std::string html;
         ctl.AllQuestions(html);
@@ -40,6 +41,7 @@ int main(int argc, char *argv[])
         resp.set_content(html, "text/html;charset=utf-8"); 
     });
 
+    //判题
     svr.Post(R"(/judge/(\d+))", [&ctl](const Request &req, Response &resp) {
         std::string number = req.matches[1];
         std::string result_json;
@@ -47,6 +49,7 @@ int main(int argc, char *argv[])
         resp.set_content(result_json, "application/json;charset=utf-8"); 
     });
 
+    //auth
     svr.Post("/api/login", [&ctl](const Request &req, Response &resp) {
         std::string out_json, set_cookie;
         ctl.Login(req.body, out_json, set_cookie);
@@ -86,12 +89,14 @@ int main(int argc, char *argv[])
         resp.set_content(html, "text/html;charset=utf-8");
     });
 
+    //我的信息
     svr.Get("/about", [&ctl](const Request &req, Response &resp) {
         std::string html;
         ctl.AboutPage(html);
         resp.set_content(html, "text/html;charset=utf-8");
     });
 
+    //录题
     svr.Post("/api/submit_question", [&ctl](const Request &req, Response &resp) {
         std::string out_json;
         ctl.SubmitQuestion(req, req.body, out_json);
@@ -102,6 +107,14 @@ int main(int argc, char *argv[])
         std::string html;
         ctl.SubmitQuestionPage(html);
         resp.set_content(html, "text/html;charset=utf-8");
+    });
+
+    //运行测试样例
+    svr.Post(R"(/run/(\d+))", [&ctl](const Request &req, Response &resp) {
+        std::string out_json;
+        std::string number = req.matches[1];
+        ctl.Run(number, req.body, out_json);
+        resp.set_content(out_json, "application/json;charset=utf-8");
     });
 
     svr.set_base_dir("./wwwroot");

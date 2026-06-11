@@ -6,9 +6,7 @@
     <title>录入题目 · OJ</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
-<body>
-    <div class="spotlight" id="spotlight" aria-hidden="true"></div>
-
+<body class="page-plain">
     <nav class="navbar">
         <div class="navbar-start">
             <a class="navbar-brand" href="/all_questions">Online Judge</a>
@@ -60,8 +58,9 @@
                             <input type="number" id="cpu_limit" name="cpu_limit" min="1" max="60" value="1" required>
                         </div>
                         <div class="auth-field submit-field-half">
-                            <label for="mem_limit">内存限制（MB）</label>
-                            <input type="number" id="mem_limit" name="mem_limit" min="1" max="102400" value="30000" required>
+                            <label for="mem_limit">内存限制（KB）</label>
+                            <input type="number" id="mem_limit" name="mem_limit" min="1024" max="1048576" value="30000" required>
+                            <p class="submit-field-hint">与判题引擎一致，单位为 KB（30000 ≈ 29 MB）。</p>
                         </div>
                     </div>
 
@@ -80,6 +79,15 @@
                         <label for="tail">测试驱动（tail）</label>
                         <p class="submit-field-hint">判题时拼在用户代码之后。预览中不展示 tail，提交后由系统使用。</p>
                         <textarea id="tail" name="tail" class="submit-code" rows="12" placeholder="test1() ... int main() { ... }" required></textarea>
+                    </div>
+
+                    <div class="auth-field">
+                        <label for="run_case">运行用例（run_case）</label>
+                        <p class="submit-field-hint">用户点击「运行」时的默认测试 harness，需包含 <code>main()</code> 并打印可读输出。</p>
+                        <div class="submit-inline-actions">
+                            <button type="button" class="submit-mini-btn" id="genRunCaseBtn">从 tail 生成骨架</button>
+                        </div>
+                        <textarea id="run_case" name="run_case" class="submit-code" rows="14" placeholder="#ifndef COMPILER_ONLINE ... int main() { ... }" required></textarea>
                     </div>
 
                     <p class="auth-error hidden" id="submitError"></p>
@@ -106,6 +114,8 @@
                     <p class="preview-mini-desc" id="pvDesc">填写题目描述后将在此显示摘要…</p>
                     <p class="preview-mini-label">代码框架（head）</p>
                     <pre class="preview-mini-code" id="pvHead"><code>// 填写 head 后预览</code></pre>
+                    <p class="preview-mini-label">运行用例（run_case）</p>
+                    <pre class="preview-mini-code preview-mini-code-sm" id="pvRunCase">// 填写 run_case 后预览</pre>
                 </div>
 
                 <button type="button" class="preview-open-btn" id="openFullPreview">做题页预览</button>
@@ -131,16 +141,27 @@
                     </div>
                 </aside>
                 <div class="panel-resizer preview-resizer"></div>
-                <section class="panel-right glass-panel-dark">
-                    <div class="editor-header">
-                        <div class="editor-tabs">
-                            <span class="editor-tab active">solution.cpp</span>
+                <section class="panel-right glass-panel-dark preview-panel-right">
+                    <div class="solve-code-zone preview-code-zone">
+                        <div class="editor-header">
+                            <div class="editor-tabs">
+                                <span class="editor-tab active">solution.cpp</span>
+                            </div>
+                            <span class="preview-readonly-tag">只读预览</span>
                         </div>
-                        <span class="preview-readonly-tag">只读预览</span>
+                        <div class="editor-container" id="previewEditor"></div>
                     </div>
-                    <div class="editor-container" id="previewEditor"></div>
+                    <div class="case-panel preview-case-panel">
+                        <div class="case-panel-toolbar">
+                            <span class="preview-case-label">run_case · 运行用例</span>
+                            <span class="preview-readonly-tag">只读预览</span>
+                        </div>
+                        <div class="case-panel-body">
+                            <div class="case-editor-container preview-case-editor" id="previewCaseEditor"></div>
+                        </div>
+                    </div>
                     <div class="editor-footer preview-footer-note">
-                        预览模式下无法提交判题
+                        预览模式下无法提交判题或运行
                     </div>
                 </section>
             </div>

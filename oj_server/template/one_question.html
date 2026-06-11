@@ -6,17 +6,20 @@
     <title>{{NUMBER}}. {{TITLE}} · OJ</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
-<body>
-    <div class="spotlight" id="spotlight" aria-hidden="true"></div>
-    <nav class="navbar">
+<body class="page-solve">
+    <nav class="navbar navbar-solve">
         <div class="navbar-start">
             <a class="navbar-brand" href="/all_questions">Online Judge</a>
             <div class="navbar-nav-links">
                 <a class="navbar-link" href="/all_questions">题库</a>
                 <a class="navbar-link" href="/about">关于</a>
             </div>
+            <span class="navbar-problem-title">{{NUMBER}}. {{TITLE}}</span>
         </div>
-        <div class="navbar-auth" id="navAuth"></div>
+        <div class="navbar-end">
+            <button class="btn-submit btn-submit-nav" id="submitBtn" type="button">提交判题</button>
+            <div class="navbar-auth" id="navAuth"></div>
+        </div>
     </nav>
 
     <div class="workspace" id="workspace">
@@ -27,7 +30,7 @@
                     <span class="difficulty {{STAR}}">{{STAR}}</span>
                     <span class="meta-tag meta-author">出题 · {{AUTHOR_NAME}}</span>
                     <span class="meta-tag">TIME {{CPU_LIMIT}}s</span>
-                    <span class="meta-tag">MEM {{MEM_LIMIT}}MB</span>
+                    <span class="meta-tag">MEM {{MEM_LIMIT}} KB</span>
                 </div>
                 <div class="problem-divider"></div>
                 <div class="problem-desc" id="problemDesc">{{DESC}}</div>
@@ -37,37 +40,73 @@
         <div class="panel-resizer" id="panelResizer"></div>
 
         <section class="panel-right">
-            <div class="editor-header">
-                <div class="editor-tabs">
-                    <span class="editor-tab active">solution.cpp</span>
+            <div class="solve-code-zone" id="solveCodeZone">
+                <div class="editor-header">
+                    <div class="editor-tabs">
+                        <span class="editor-tab active">solution.cpp</span>
+                    </div>
+                    <div class="editor-actions">
+                        <button class="editor-action-btn" id="fontDec" type="button" title="缩小字号">−</button>
+                        <button class="editor-action-btn" id="fontInc" type="button" title="放大字号">+</button>
+                    </div>
                 </div>
-                <div class="editor-actions">
-                    <button class="editor-action-btn" id="fontDec" title="缩小字号">−</button>
-                    <button class="editor-action-btn" id="fontInc" title="放大字号">+</button>
-                </div>
+                <div class="editor-container" id="editor"></div>
             </div>
 
-            <div class="editor-container" id="editor"></div>
+            <div class="panel-v-resizer" id="panelVResizer"></div>
 
-            <div class="editor-footer">
-                <button class="btn-submit" id="submitBtn">提交判题</button>
-            </div>
+            <div class="case-panel" id="casePanel">
+                <div class="case-panel-toolbar">
+                    <div class="case-tabs-wrap">
+                        <button class="case-tab-nav case-tab-prev" id="caseTabPrev" type="button" title="上一个用例">‹</button>
+                        <div class="case-tabs" id="caseTabs"></div>
+                        <button class="case-tab-nav case-tab-next" id="caseTabNext" type="button" title="下一个用例">›</button>
+                        <button class="case-tab-add" id="caseTabAdd" type="button" title="添加用例">+</button>
+                    </div>
+                    <div class="case-toolbar-actions">
+                        <button class="btn-run" id="runBtn" type="button">运行</button>
+                        <button class="case-collapse-btn" id="caseCollapseBtn" type="button" title="收起测试区">
+                            <span class="case-collapse-icon" id="caseCollapseIcon">▾</span>
+                            <span class="case-collapse-label" id="caseCollapseLabel">收起</span>
+                        </button>
+                    </div>
+                </div>
 
-            <div class="result-panel hidden" id="resultPanel">
-                <div class="result-banner hidden" id="resultBanner">
-                    <span class="result-banner-icon" id="resultBannerIcon">·</span>
-                    <span class="result-banner-text" id="resultBannerText"></span>
+                <div class="case-panel-body" id="casePanelBody">
+                <div class="case-carousel" id="caseCarousel">
+                    <button class="carousel-nav carousel-prev" id="carouselPrev" type="button" title="测试用例">‹</button>
+                    <div class="carousel-viewport">
+                        <div class="carousel-track" id="carouselTrack">
+                            <div class="carousel-slide" data-slide="case">
+                                <div class="case-editor-container" id="caseEditor"></div>
+                            </div>
+                            <div class="carousel-slide" data-slide="result">
+                                <div class="result-view" id="resultView">
+                                    <div class="result-view-header">
+                                        <span class="result-view-title" id="resultViewTitle">运行结果</span>
+                                        <span class="result-view-badge" id="resultViewBadge"></span>
+                                    </div>
+                                    <div class="result-view-body" id="resultViewBody">
+                                        <p class="result-placeholder">点击「运行」或「提交判题」后在此查看结果</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="carousel-nav carousel-next" id="carouselNext" type="button" title="运行结果">›</button>
                 </div>
-                <div class="result-header" id="resultHeader">
-                    <span class="result-status" id="resultStatus">等待提交</span>
-                    <span class="result-toggle" id="resultToggle">收起</span>
+
+                <div class="carousel-indicators" id="carouselIndicators">
+                    <button class="carousel-dot active" data-index="0" type="button">测试用例</button>
+                    <button class="carousel-dot" data-index="1" type="button">运行结果</button>
                 </div>
-                <div class="result-body" id="resultBody"></div>
+                </div>
             </div>
         </section>
     </div>
 
     <script type="text/plain" id="codeTemplate">{{CODE:none}}</script>
+    <script type="text/plain" id="runCaseTemplate">{{RUN_CASE:none}}</script>
     <div id="questionNumber" class="hidden">{{NUMBER}}</div>
 
     <script src="/js/effects.js"></script>

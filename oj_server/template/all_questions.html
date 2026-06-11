@@ -6,8 +6,8 @@
     <title>题目列表 · OJ</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
-<body>
-    <div class="spotlight" id="spotlight" aria-hidden="true"></div>
+<body class="page-particles">
+    <canvas id="particleCanvas" class="particle-canvas" aria-hidden="true"></canvas>
     <nav class="navbar">
         <div class="navbar-start">
             <a class="navbar-brand" href="/all_questions">Online Judge</a>
@@ -45,7 +45,7 @@
                             <span class="card-author">出题 · {{AUTHOR_NAME}}</span>
                             <div class="card-limits">
                                 <span>{{CPU_LIMIT}}s</span>
-                                <span>{{MEM_LIMIT}}MB</span>
+                                <span>{{MEM_LIMIT}} KB</span>
                             </div>
                         </div>
                         <div class="card-meta-right">

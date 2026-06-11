@@ -78,6 +78,11 @@ namespace ns_control
             _que.RecoveryMachine();
         }
 
+        void Run(const std::string& number, const std::string &in_json, std::string &out_json)
+        {
+            _que.Run(number, in_json, out_json);
+        }
+
     private:
         ControlUsr _usr;
         ControlQue _que;

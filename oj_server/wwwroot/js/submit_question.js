@@ -21,13 +21,15 @@
     var pvAuthor = document.getElementById('pvAuthor');
     var pvDesc = document.getElementById('pvDesc');
     var pvHead = document.getElementById('pvHead');
+    var pvRunCase = document.getElementById('pvRunCase');
     var pvMeta = document.getElementById('pvMeta');
+    var genRunCaseBtn = document.getElementById('genRunCaseBtn');
 
     var modalTitle = document.getElementById('modalTitle');
     var modalMeta = document.getElementById('modalMeta');
     var modalDesc = document.getElementById('modalDesc');
 
-    var FIELD_NAMES = ['title', 'star', 'desc', 'head', 'tail', 'cpu_limit', 'mem_limit'];
+    var FIELD_NAMES = ['title', 'star', 'desc', 'head', 'tail', 'run_case', 'cpu_limit', 'mem_limit'];
 
     var EXAMPLE = {
         title: '两数之和',
@@ -92,6 +94,29 @@
             '    return 0;',
             '}'
         ].join('\n'),
+        run_case: [
+            '#ifndef COMPILER_ONLINE',
+            '#include "head.cpp"',
+            '#endif',
+            '',
+            'void runCustom() {',
+            '    Solution s;',
+            '    vector<int> nums = {2, 7, 11, 15};',
+            '    int target = 9;',
+            '    vector<int> result = s.twoSum(nums, target);',
+            '    cout << "输出: [";',
+            '    for (size_t i = 0; i < result.size(); i++) {',
+            '        if (i) cout << ",";',
+            '        cout << result[i];',
+            '    }',
+            '    cout << "]" << endl;',
+            '}',
+            '',
+            'int main() {',
+            '    runCustom();',
+            '    return 0;',
+            '}'
+        ].join('\n'),
         cpu_limit: 1,
         mem_limit: 30000
     };
@@ -100,6 +125,7 @@
     var currentAuthor = '我';
     var draftTimer = null;
     var previewEditor = null;
+    var previewCaseEditor = null;
     var aceLoaded = false;
 
     function escapeHtml(s) {
@@ -158,7 +184,7 @@
             '<span class="' + starCls + '">' + escapeHtml(starText) + '</span>' +
             '<span class="meta-tag meta-author">出题 · ' + escapeHtml(author || '我') + '</span>' +
             '<span class="meta-tag">TIME ' + escapeHtml(String(cpu || '1')) + 's</span>' +
-            '<span class="meta-tag">MEM ' + escapeHtml(String(mem || '30000')) + 'MB</span>'
+            '<span class="meta-tag">MEM ' + escapeHtml(String(mem || '30000')) + ' KB</span>'
         );
     }
 
@@ -170,6 +196,7 @@
             desc: state.desc,
             head: state.head,
             tail: state.tail,
+            run_case: state.run_case,
             cpu_limit: state.cpu_limit || '1',
             mem_limit: state.mem_limit || '30000'
         };
@@ -188,6 +215,10 @@
         if (pvHead) {
             var headText = data.head.trim() ? truncate(data.head, 480) : '// 填写 head 后预览';
             pvHead.innerHTML = '<code>' + escapeHtml(headText) + '</code>';
+        }
+        if (pvRunCase) {
+            var runText = data.run_case.trim() ? data.run_case : '// 填写 run_case 后预览';
+            pvRunCase.textContent = runText.length > 480 ? runText.slice(0, 480) + '…' : runText;
         }
         if (previewEditor)
             previewEditor.setValue(data.head || '', -1);
@@ -299,6 +330,22 @@
         previewEditor.session.setUseWorker(false);
     }
 
+    function initPreviewCaseEditor() {
+        if (previewCaseEditor) return;
+        previewCaseEditor = ace.edit('previewCaseEditor');
+        previewCaseEditor.setTheme('ace/theme/dracula');
+        previewCaseEditor.session.setMode('ace/mode/c_cpp');
+        previewCaseEditor.setReadOnly(true);
+        previewCaseEditor.setOptions({
+            fontSize: '13px',
+            showPrintMargin: false,
+            highlightActiveLine: false,
+            readOnly: true
+        });
+        previewCaseEditor.renderer.setScrollMargin(6, 6, 0, 0);
+        previewCaseEditor.session.setUseWorker(false);
+    }
+
     function openFullPreview() {
         var data = getFormData();
         if (!data.title && !data.desc && !data.head) {
@@ -316,9 +363,13 @@
 
         ensureAce().then(function () {
             initPreviewEditor();
+            initPreviewCaseEditor();
             previewEditor.setValue(data.head || '', -1);
             previewEditor.clearSelection();
+            previewCaseEditor.setValue(data.run_case || '// 请填写 run_case', -1);
+            previewCaseEditor.clearSelection();
             previewEditor.resize();
+            previewCaseEditor.resize();
         }).catch(function () {
             showError('编辑器加载失败，无法打开预览');
             closeFullPreview();
@@ -329,6 +380,7 @@
         previewModal.classList.add('hidden');
         document.body.classList.remove('modal-open');
         if (previewEditor) previewEditor.resize();
+        if (previewCaseEditor) previewCaseEditor.resize();
     }
 
     function requireLogin() {
@@ -361,6 +413,59 @@
             scheduleDraftSave();
         });
     });
+
+    function generateRunCaseSkeleton() {
+        var tail = (form.querySelector('[name="tail"]') || {}).value || '';
+        var skeleton = [
+            '#ifndef COMPILER_ONLINE',
+            '#include "head.cpp"',
+            '#endif',
+            '',
+            'void runCustom() {',
+            '    Solution s;',
+            '    // 在此构造输入并调用 Solution',
+            '    // 参考 tail 中 test1() 的写法',
+            '    cout << "输出: " << /* result */ << endl;',
+            '}',
+            '',
+            'int main() {',
+            '    runCustom();',
+            '    return 0;',
+            '}'
+        ].join('\n');
+        if (tail.indexOf('test1') !== -1) {
+            skeleton = [
+                '#ifndef COMPILER_ONLINE',
+                '#include "head.cpp"',
+                '#endif',
+                '',
+                'void runCustom() {',
+                '    // 从 tail 的 test1 复制变量声明与调用逻辑',
+                '    // 将 passed/not passed 改为打印实际输出',
+                '}',
+                '',
+                'int main() {',
+                '    runCustom();',
+                '    return 0;',
+                '}'
+            ].join('\n');
+        }
+        var runEl = form.querySelector('[name="run_case"]');
+        if (runEl && !runEl.value.trim()) {
+            runEl.value = skeleton;
+            updatePreview();
+            scheduleDraftSave();
+            return;
+        }
+        if (runEl && !window.confirm('将覆盖当前 run_case 内容，是否继续？')) return;
+        if (runEl) {
+            runEl.value = skeleton;
+            updatePreview();
+            scheduleDraftSave();
+        }
+    }
+
+    if (genRunCaseBtn) genRunCaseBtn.addEventListener('click', generateRunCaseSkeleton);
 
     if (fillExampleBtn) fillExampleBtn.addEventListener('click', fillExample);
     if (undoExampleBtn) undoExampleBtn.addEventListener('click', undoExample);

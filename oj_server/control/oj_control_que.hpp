@@ -110,6 +110,63 @@ namespace ns_control
             SanitizeJudgeResponse(out_json);
         }
 
+        //运行测试样例
+        void Run(const std::string& number, const std::string& in_json, std::string& out_json)
+        {
+            Question q;
+            _model_questions.GetOneQuestion(number, q);
+
+            Json::Value in_root;
+            Json::Reader reader;
+            reader.parse(in_json, in_root);
+
+            Json::Value compile_root;
+            Json::FastWriter writer;
+            compile_root["input"] = in_root["input"].asString();
+            compile_root["code"] = in_root["code"].asString() + '\n' + in_root["case_code"].asString();
+            compile_root["cpu_limit"] = q.cpu_limit;
+            compile_root["mem_limit"] = q.mem_limit;
+            std::string compile_str = writer.write(compile_root);
+
+            while (true)
+            {
+                int id = 0;
+                Machine *machine = nullptr;
+                if (!_loadblance.SmartChoice(id, &machine))
+                    break;
+
+                Client client(machine->_ip, machine->_port);
+                client.set_read_timeout(15);
+                client.set_write_timeout(15);
+
+                machine->IncLoad();
+                LOG(LogLevel::INFO) << "选择服务器成功, id -> " << id << ", 具体信息 -> "
+                                    << machine->_ip << " : " << machine->_port
+                                    << ", 此时load -> " << machine->GetLoad() << std::endl;
+                auto res = client.Post("/compile_and_run", compile_str, "application/json;charset=utf-8");
+                if (res)
+                {
+                    if (res->status == 200)
+                    {
+                        out_json = res->body;
+                        machine->DecLoad();
+                        break;
+                    }
+                    machine->DecLoad();
+                }
+                else
+                {
+                    std::cerr << "HTTP 请求失败, 错误码: " << static_cast<int>(res.error()) << std::endl;
+                    LOG(LogLevel::ERROR) << " 当前请求的主机id: " << id << " 详情: " << machine->_ip
+                                         << ":" << machine->_port << " 可能已经离线"
+                                         << ", 此时load -> " << machine->GetLoad();
+                    machine->DecLoad();
+                    _loadblance.OfflineMachine(id);
+                }
+            }
+            SanitizeJudgeResponse(out_json);
+        }
+
         //添加题目
         void SubmitQuestion(const Request& req, const std::string& in_json, std::string& out_json)
         {
@@ -137,7 +194,8 @@ namespace ns_control
                 !in_root.isMember("head") ||
                 !in_root.isMember("tail") ||
                 !in_root.isMember("cpu_limit") ||
-                !in_root.isMember("mem_limit"))
+                !in_root.isMember("mem_limit") || 
+                !in_root.isMember("run_case"))
             {
                 out_json = BuildAuthJson(2, "请求格式不合法");
                 return;
@@ -151,6 +209,7 @@ namespace ns_control
             q.tail = in_root["tail"].asString();
             q.cpu_limit = in_root["cpu_limit"].asInt();
             q.mem_limit = in_root["mem_limit"].asInt();
+            q.run_case = in_root["run_case"].asString();
 
             if (q.title.empty())
             {
@@ -167,6 +226,11 @@ namespace ns_control
                 out_json = BuildAuthJson(3, "难度只能选择：简单、中等、困难");
                 return;
             }
+            if (q.run_case.empty())
+            {
+                out_json = BuildAuthJson(3, "运行用例不能为空");
+                return;
+            }
 
             std::string number;
             if (!_model_questions.InsertQuestion(q, user.id, number))
@@ -180,6 +244,7 @@ namespace ns_control
             out_json = BuildAuthJson(0, "录题成功", &data);
         }
 
+        //录题页面
         bool SubmitQuestionPage(std::string &html)
         {
             _view.SubmitQuestionExpandHtml(html);
