@@ -5,6 +5,7 @@
 #include "../../comm/httplib.h"
 #include "oj_control_usr.hpp"
 #include "oj_control_que.hpp"
+#include "oj_control_pro.hpp"
 
 namespace ns_control
 {
@@ -58,9 +59,9 @@ namespace ns_control
             return _que.OneQuestion(number, html);
         }
 
-        void Judge(const std::string &number, const std::string &in_json, std::string &out_json)
+        void Judge(const Request &req, const std::string &number, const std::string &in_json, std::string &out_json)
         {
-            _que.Judge(number, in_json, out_json);
+            _que.Judge(req, number, in_json, out_json);
         }
 
         void SubmitQuestion(const Request &req, const std::string &in_json, std::string &out_json)
@@ -83,8 +84,19 @@ namespace ns_control
             _que.Run(number, in_json, out_json);
         }
 
+        void MyProgress(const Request &req, std::string &out_json)
+        {
+            _pro.MyProgress(req, out_json);
+        }
+
+        bool MyProgressPage(const Request &req, std::string &html)
+        {
+            return _pro.MyProgressPage(req, html);
+        }
+
     private:
         ControlUsr _usr;
         ControlQue _que;
+        ControlProgress _pro;
     };
 }

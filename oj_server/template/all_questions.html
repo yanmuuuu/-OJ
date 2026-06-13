@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>题目列表 · OJ</title>
+    <title>题目列表 · Yanmuuuu Judge</title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
-<body class="page-particles">
-    <canvas id="particleCanvas" class="particle-canvas" aria-hidden="true"></canvas>
+<body>
     <nav class="navbar">
         <div class="navbar-start">
-            <a class="navbar-brand" href="/all_questions">Online Judge</a>
+            <a class="navbar-brand" href="/all_questions">Yanmuuuu Judge</a>
             <div class="navbar-nav-links">
                 <a class="navbar-link navbar-link-active" href="/all_questions">题库</a>
+                <a class="navbar-link" href="/my_progress">我的做题</a>
                 <a class="navbar-link" href="/about">关于</a>
             </div>
         </div>
@@ -30,13 +30,28 @@
             <input type="text" class="search-input" id="searchInput" placeholder="搜索题号、标题或出题人..." autocomplete="off">
         </div>
 
+        <div class="list-filters">
+            <select class="filter-select" id="filterStatus">
+                <option value="all">全部状态</option>
+                <option value="solved">已解答</option>
+                <option value="attempted">尝试过</option>
+                <option value="none">未开始</option>
+            </select>
+            <select class="filter-select" id="filterStar">
+                <option value="all">全部难度</option>
+                <option value="简单">简单</option>
+                <option value="中等">中等</option>
+                <option value="困难">困难</option>
+            </select>
+        </div>
+
         <div class="stats-bar">
             <span>共 <strong id="totalCount">0</strong> 道题目</span>
         </div>
 
         <div class="question-grid" id="questionGrid">
             {{#QUESTIONS}}
-            <article class="question-card" data-title="{{TITLE}}" data-number="{{NUMBER}}" data-author="{{AUTHOR_NAME}}">
+            <article class="question-card" data-title="{{TITLE}}" data-number="{{NUMBER}}" data-author="{{AUTHOR_NAME}}" data-star="{{STAR}}">
                 <a href="/question/{{NUMBER}}">
                     <div class="card-number">PROBLEM {{NUMBER}}</div>
                     <h2 class="card-title">{{TITLE}}</h2>
@@ -49,6 +64,7 @@
                             </div>
                         </div>
                         <div class="card-meta-right">
+                            <span class="card-status-wrap"></span>
                             <span class="difficulty {{STAR}}">{{STAR}}</span>
                             <span class="card-arrow">进入 →</span>
                         </div>
@@ -60,7 +76,6 @@
         </div>
     </main>
 
-    <script src="/js/effects.js"></script>
     <script src="/js/nav_auth.js"></script>
     <script src="/js/all_questions.js"></script>
 </body>

@@ -10,6 +10,7 @@
 #include "../../comm/httplib.h"
 #include "../model/oj_model_sql_que.hpp"
 #include "../model/oj_model_sql_usr.hpp"
+#include "../model/oj_model_sql_pro.hpp"
 #include "../view/oj_view.hpp"
 #include "oj_control_machine.hpp"
 
@@ -54,7 +55,7 @@ namespace ns_control
         }
 
         //判题
-        void Judge(const std::string &number, const std::string &in_json, std::string &out_json)
+        void Judge(const Request &req, const std::string &number, const std::string &in_json, std::string &out_json)
         {
             Question q;
             _model_questions.GetOneQuestion(number, q);
@@ -108,6 +109,7 @@ namespace ns_control
                 }
             }
             SanitizeJudgeResponse(out_json);
+            RecordProgressIfLoggedIn(req, number, out_json);
         }
 
         //运行测试样例
@@ -298,9 +300,88 @@ namespace ns_control
             if (!reader.parse(out_json, root) || !root.isObject() || !root.isMember("status"))
                 out_json = BuildJudgeErrorJson(-2, "判题服务暂时不可用，请稍后重试");
         }
+
+        static bool IsTestLinePassed(const std::string &line)
+        {
+            std::string lower = line;
+            boost::algorithm::to_lower(lower);
+            if (lower.find("not passed") != std::string::npos)
+                return false;
+            size_t pos = lower.rfind("passed");
+            if (pos == std::string::npos)
+                return false;
+            for (size_t i = pos + 6; i < lower.size(); ++i)
+            {
+                if (!isspace(static_cast<unsigned char>(lower[i])))
+                    return false;
+            }
+            return true;
+        }
+
+        static bool IsAllTestsPassed(const std::string &stdout_str)
+        {
+            if (stdout_str.empty())
+                return false;
+
+            std::vector<std::string> lines;
+            StringUtil::SplitString(stdout_str, lines, "\n");
+            std::vector<std::string> non_empty;
+            for (auto line : lines)
+            {
+                boost::trim(line);
+                if (!line.empty())
+                    non_empty.push_back(line);
+            }
+            if (non_empty.empty())
+                return false;
+
+            for (const auto &line : non_empty)
+            {
+                if (!IsTestLinePassed(line))
+                    return false;
+            }
+            return true;
+        }
+
+        void RecordProgressIfLoggedIn(const Request &req, const std::string &number, const std::string &out_json)
+        {
+            Json::Value root;
+            Json::Reader reader;
+            if (!reader.parse(out_json, root) || !root.isMember("status"))
+                return;
+
+            int status = root["status"].asInt();
+            if (status == -2)
+                return;
+
+            std::string session_id = CookieUtil::ParseSessionId(req);
+            if (session_id.empty())
+                return;
+
+            User user;
+            if (!_model_users.GetUserBySession(session_id, user))
+                return;
+
+            std::string progress_status = "attempted";
+            if (status == 0)
+            {
+                std::string stdout_str = root.isMember("stdout") ? root["stdout"].asString() : "";
+                if (IsAllTestsPassed(stdout_str))
+                    progress_status = "solved";
+            }
+
+            int qnum = std::stoi(number);
+            std::string sql = "INSERT INTO " + oj_user_progress
+                + " (user_id, question_number, status) VALUES ("
+                + std::to_string(user.id) + ", " + std::to_string(qnum) + ", '" + progress_status + "')"
+                + " ON DUPLICATE KEY UPDATE status = IF(status = 'solved', 'solved', VALUES(status))";
+
+            _model_progress.QueryMysqlOther(sql);
+        }
     private:
         ModelQuestions _model_questions;
         ModelUser _model_users;
+        ModelProgress _model_progress;
         View _view;
         LoadBlance _loadblance;
     };

@@ -120,5 +120,17 @@ namespace ns_view
             }
             tpl->Expand(&html, &dict);
         }
+
+        void MyProgressExpandHtml(std::string &html)
+        {
+            ctemplate::TemplateDictionary dict("my_progress");
+            ctemplate::Template *tpl = ctemplate::Template::GetTemplate(FileUtil::GetProjectPath("./template/my_progress.html"), ctemplate::DO_NOT_STRIP);
+            if (!tpl)
+            {
+                html = "模板文件加载失败: my_progress.html";
+                return;
+            }
+            tpl->Expand(&html, &dict);
+        }
     };
 }

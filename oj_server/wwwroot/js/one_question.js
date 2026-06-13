@@ -79,7 +79,7 @@
     var fontSize = 14;
     var cases = [];
     var activeCaseIndex = 0;
-    var carouselIndex = 0;
+    var mainPanel = 'case';
     var questionNumber = '';
     var storageKey = '';
 
@@ -104,7 +104,7 @@
             return Promise.all([
                 loadScript(ACE_BASE + '/ext-language_tools.js'),
                 loadScript(ACE_BASE + '/mode-c_cpp.js'),
-                loadScript(ACE_BASE + '/theme-dracula.js')
+                loadScript(ACE_BASE + '/theme-chrome.js')
             ]);
         });
     }
@@ -154,7 +154,7 @@
 
     function createAceEditor(el, value) {
         var editor = ace.edit(el);
-        editor.setTheme('ace/theme/dracula');
+        editor.setTheme('ace/theme/chrome');
         editor.session.setMode('ace/mode/c_cpp');
         editor.setOptions({
             fontSize: fontSize + 'px',
@@ -380,40 +380,48 @@
         selectCase((activeCaseIndex + delta + cases.length) % cases.length);
     }
 
-    function setCarouselIndex(index) {
-        carouselIndex = Math.max(0, Math.min(1, index));
-        var track = document.getElementById('carouselTrack');
-        if (track) track.style.transform = 'translateX(-' + (carouselIndex * 100) + '%)';
-        document.querySelectorAll('.carousel-dot').forEach(function(dot) {
-            dot.classList.toggle('active', parseInt(dot.dataset.index, 10) === carouselIndex);
+    function setMainPanel(panel) {
+        mainPanel = panel === 'result' ? 'result' : 'case';
+        document.querySelectorAll('.case-main-tab').forEach(function(tab) {
+            tab.classList.toggle('active', tab.dataset.panel === mainPanel);
         });
-        var prev = document.getElementById('carouselPrev');
-        var next = document.getElementById('carouselNext');
-        if (prev) prev.disabled = carouselIndex === 0;
-        if (next) next.disabled = carouselIndex === 1;
+        var casePane = document.getElementById('casePaneCase');
+        var resultPane = document.getElementById('casePaneResult');
+        if (casePane) casePane.classList.toggle('active', mainPanel === 'case');
+        if (resultPane) resultPane.classList.toggle('active', mainPanel === 'result');
+        setTimeout(resizeEditors, 30);
     }
 
-    function initCarousel() {
-        var prev = document.getElementById('carouselPrev');
-        var next = document.getElementById('carouselNext');
-        if (prev) prev.addEventListener('click', function() { setCarouselIndex(carouselIndex - 1); });
-        if (next) next.addEventListener('click', function() { setCarouselIndex(carouselIndex + 1); });
-        document.querySelectorAll('.carousel-dot').forEach(function(dot) {
-            dot.addEventListener('click', function() {
-                setCarouselIndex(parseInt(dot.dataset.index, 10));
+    function initMainTabs() {
+        document.querySelectorAll('.case-main-tab').forEach(function(tab) {
+            tab.addEventListener('click', function() {
+                setMainPanel(tab.dataset.panel);
             });
         });
+    }
 
-        var viewport = document.querySelector('.carousel-viewport');
-        if (!viewport) return;
-        var touchStartX = 0;
-        viewport.addEventListener('touchstart', function(e) {
-            touchStartX = e.changedTouches[0].screenX;
-        }, { passive: true });
-        viewport.addEventListener('touchend', function(e) {
-            var dx = e.changedTouches[0].screenX - touchStartX;
-            if (Math.abs(dx) > 50) setCarouselIndex(carouselIndex + (dx < 0 ? 1 : -1));
-        }, { passive: true });
+    function showSavedIndicator() {
+        var el = document.getElementById('editorSaved');
+        if (!el) return;
+        el.classList.add('visible');
+        clearTimeout(showSavedIndicator._timer);
+        showSavedIndicator._timer = setTimeout(function() {
+            el.classList.remove('visible');
+        }, 2000);
+    }
+
+    function initProgressBadge() {
+        fetch('/api/my_progress', { credentials: 'same-origin' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.errcode !== 0 || !data.data || !data.data.map) return;
+                var status = data.data.map[questionNumber];
+                var badge = document.getElementById('problemSolvedBadge');
+                if (badge && status === 'solved') {
+                    badge.classList.remove('hidden');
+                }
+            })
+            .catch(function() { /* ignore */ });
     }
 
     function parseTests(stdout) {
@@ -520,7 +528,7 @@
         badgeEl.className = 'result-view-badge ' + payload.cls;
         view.className = 'result-view result-view-' + payload.cls;
         bodyEl.innerHTML = payload.html;
-        setCarouselIndex(1);
+        setMainPanel('result');
     }
 
     function setBtnLoading(btn, on, idleText) {
@@ -534,6 +542,7 @@
         return fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
             body: JSON.stringify(body)
         }).then(function(res) {
             return res.text().then(function(text) {
@@ -552,6 +561,21 @@
         solutionEditor = createAceEditor('editor', codeTemplate);
         solutionEditor.focus();
         solutionEditor.gotoLine(1, 0, true);
+        solutionEditor.session.on('change', showSavedIndicator);
+
+        try {
+            var savedCode = localStorage.getItem('oj_code_' + questionNumber);
+            if (savedCode) {
+                solutionEditor.setValue(savedCode, -1);
+                solutionEditor.clearSelection();
+            }
+        } catch (e) { /* ignore */ }
+
+        solutionEditor.session.on('change', function() {
+            try {
+                localStorage.setItem('oj_code_' + questionNumber, solutionEditor.getValue());
+            } catch (e) { /* ignore */ }
+        });
 
         loadCasesFromStorage();
         caseEditor = createAceEditor('caseEditor', cases[activeCaseIndex].content);
@@ -607,17 +631,24 @@
 
         submitBtn.addEventListener('click', function() {
             if (submitBtn.disabled) return;
-            setBtnLoading(submitBtn, true, '提交判题');
+            setBtnLoading(submitBtn, true, '提交');
             fetchJson('/judge/' + questionNumber, {
                 input: '',
                 code: solutionEditor.getValue()
             })
             .then(function(data) {
-                setBtnLoading(submitBtn, false, '提交判题');
+                setBtnLoading(submitBtn, false, '提交');
                 showResultView(renderSubmitResult(data));
+                if (data.status === 0) {
+                    var verdict = buildSubmitVerdict(data.stdout);
+                    if (verdict.cls === 'success') {
+                        var badge = document.getElementById('problemSolvedBadge');
+                        if (badge) badge.classList.remove('hidden');
+                    }
+                }
             })
             .catch(function() {
-                setBtnLoading(submitBtn, false, '提交判题');
+                setBtnLoading(submitBtn, false, '提交');
                 showResultView({
                     title: '提交结果',
                     badge: '失败',
@@ -647,8 +678,9 @@
         initPanelResizer();
         initVerticalResizer();
         initCasePanelCollapse();
-        initCarousel();
-        setCarouselIndex(0);
+        initMainTabs();
+        initProgressBadge();
+        setMainPanel('case');
 
         loadAceAssets()
             .then(initEditorsAndActions)

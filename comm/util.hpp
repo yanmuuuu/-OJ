@@ -28,6 +28,7 @@ namespace ns_util
     static const std::string oj_questions = "oj_questions";
     static const std::string oj_users = "oj_users";
     static const std::string oj_sessions = "oj_sessions";
+    static const std::string oj_user_progress = "oj_user_progress";
     static const std::string host = "127.0.0.1";
     static const std::string user = "oj_backend";
     static const std::string passwd = "123456";

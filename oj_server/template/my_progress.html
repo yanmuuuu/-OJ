@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的做题 · Yanmuuuu Judge</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-start">
+            <a class="navbar-brand" href="/all_questions">Yanmuuuu Judge</a>
+            <div class="navbar-nav-links">
+                <a class="navbar-link" href="/all_questions">题库</a>
+                <a class="navbar-link navbar-link-active" href="/my_progress">我的做题</a>
+                <a class="navbar-link" href="/about">关于</a>
+            </div>
+        </div>
+        <div class="navbar-auth" id="navAuth"></div>
+    </nav>
+
+    <main class="page-list my-progress-page">
+        <header class="page-header">
+            <h1>我的做题</h1>
+            <p id="progressSummary">加载中...</p>
+        </header>
+
+        <div class="list-filters">
+            <select class="filter-select" id="filterStatus">
+                <option value="all">全部状态</option>
+                <option value="solved">已解答</option>
+                <option value="attempted">尝试过</option>
+            </select>
+            <select class="filter-select" id="filterStar">
+                <option value="all">全部难度</option>
+                <option value="简单">简单</option>
+                <option value="中等">中等</option>
+                <option value="困难">困难</option>
+            </select>
+        </div>
+
+        <div class="problem-table-head">
+            <span>题号</span>
+            <span>题目</span>
+            <span>难度</span>
+            <span>状态 / 时间</span>
+        </div>
+        <div class="question-grid" id="progressList"></div>
+        <div class="empty-state hidden" id="progressEmpty">暂无记录</div>
+    </main>
+
+    <script src="/js/nav_auth.js"></script>
+    <script src="/js/my_progress.js"></script>
+</body>
+</html>

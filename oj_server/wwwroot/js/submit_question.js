@@ -306,7 +306,7 @@
         return loadScript(ACE_BASE + '/ace.js').then(function () {
             return Promise.all([
                 loadScript(ACE_BASE + '/mode-c_cpp.js'),
-                loadScript(ACE_BASE + '/theme-dracula.js')
+                loadScript(ACE_BASE + '/theme-chrome.js')
             ]);
         }).then(function () {
             ace.config.set('basePath', ACE_BASE);
@@ -317,7 +317,7 @@
     function initPreviewEditor() {
         if (previewEditor) return;
         previewEditor = ace.edit('previewEditor');
-        previewEditor.setTheme('ace/theme/dracula');
+        previewEditor.setTheme('ace/theme/chrome');
         previewEditor.session.setMode('ace/mode/c_cpp');
         previewEditor.setReadOnly(true);
         previewEditor.setOptions({
@@ -333,7 +333,7 @@
     function initPreviewCaseEditor() {
         if (previewCaseEditor) return;
         previewCaseEditor = ace.edit('previewCaseEditor');
-        previewCaseEditor.setTheme('ace/theme/dracula');
+        previewCaseEditor.setTheme('ace/theme/chrome');
         previewCaseEditor.session.setMode('ace/mode/c_cpp');
         previewCaseEditor.setReadOnly(true);
         previewCaseEditor.setOptions({

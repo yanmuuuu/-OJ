@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
     svr.Post(R"(/judge/(\d+))", [&ctl](const Request &req, Response &resp) {
         std::string number = req.matches[1];
         std::string result_json;
-        ctl.Judge(number, req.body, result_json);
+        ctl.Judge(req, number, req.body, result_json);
         resp.set_content(result_json, "application/json;charset=utf-8"); 
     });
 
@@ -75,6 +75,18 @@ int main(int argc, char *argv[])
         std::string out_json;
         ctl.Me(req, out_json);
         resp.set_content(out_json, "application/json;charset=utf-8");
+    });
+
+    svr.Get("/api/my_progress", [&ctl](const Request &req, Response &resp) {
+        std::string out_json;
+        ctl.MyProgress(req, out_json);
+        resp.set_content(out_json, "application/json;charset=utf-8");
+    });
+
+    svr.Get("/my_progress", [&ctl](const Request &req, Response &resp) {
+        std::string html;
+        ctl.MyProgressPage(req, html);
+        resp.set_content(html, "text/html;charset=utf-8");
     });
 
     svr.Get("/login", [&ctl](const Request &req, Response &resp) {
